@@ -1,0 +1,1884 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1110">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Daily OS">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Norigoni Daily OS</title>
+<style>
+  :root{
+    --bg:#0f1110; --card:#171a18; --line:#262b28; --text:#e6e9e7; --sub:#8a928d;
+    --igusa:#4A7C59; --igusa-glow:rgba(74,124,89,.55); --igusa-soft:rgba(74,124,89,.16); --igusa-lt:#8fc9a0;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--text);color-scheme:dark;overflow-x:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;touch-action:manipulation}
+  body{min-height:100vh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+  .wrap{max-width:480px;margin:0 auto;padding:18px 16px 64px}
+
+  header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px}
+  .app{font-size:10px;letter-spacing:.2em;color:#58605b;margin-bottom:2px}
+  .date{font-size:15px;color:var(--sub);letter-spacing:.04em}
+  .day{font-size:15px;color:var(--sub)}
+  .day b{font-size:34px;font-weight:700;color:var(--text);letter-spacing:-.02em;margin:0 2px}
+  .bar{height:3px;background:var(--line);border-radius:3px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:var(--igusa);transition:width .4s}
+  .top .bar{margin:6px 0 14px}
+
+  h2{font-size:12px;font-weight:600;color:var(--sub);letter-spacing:.12em;margin:26px 0 10px;
+     display:flex;justify-content:space-between;align-items:center}
+  h2 em{font-style:normal;color:var(--igusa-lt);letter-spacing:.04em}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+
+  input[type=text],input[type=date],textarea{
+    width:100%;background:transparent;border:0;outline:0;color:var(--text);
+    font:inherit;font-size:16px;padding:8px 4px;resize:none}
+  input::placeholder,textarea::placeholder{color:#555c58}
+  .row{display:flex;gap:10px;align-items:center}
+  .row input{flex:1}
+
+  button{font:inherit;color:inherit;cursor:pointer;border:1px solid var(--line);
+    background:var(--card);border-radius:12px;transition:background .2s,border-color .2s,box-shadow .25s,transform .08s}
+  button:active{transform:scale(.98)}
+  .on{background:var(--igusa)!important;border-color:var(--igusa)!important;color:#fff;
+    box-shadow:0 0 18px var(--igusa-glow),inset 0 0 0 1px rgba(255,255,255,.08)}
+  .link{background:none;border:0;color:var(--igusa-lt);font-size:12px;padding:4px 0;letter-spacing:.04em}
+
+  /* 北極星 */
+  .why{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--igusa);border-radius:12px;padding:6px 10px}
+  .why textarea{font-size:min(15px,3.1vw);line-height:1.6;min-height:0;padding:8px 4px;overflow:hidden}
+  details.ms{margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:0 12px}
+  details.ms summary{list-style:none;cursor:pointer;padding:12px 0;font-size:12px;color:var(--sub);letter-spacing:.1em;
+    display:flex;justify-content:space-between}
+  details.ms summary::-webkit-details-marker{display:none}
+  details.ms summary:after{content:'＋';color:var(--igusa-lt)}
+  details.ms[open] summary:after{content:'－'}
+  .ms ul{list-style:none;margin:0;padding:0 0 10px}
+  .ms li{display:flex;gap:12px;padding:7px 0;font-size:14px;border-top:1px solid var(--line)}
+  .ms li b{flex:none;width:96px;font-weight:600;color:var(--sub);font-size:12px;padding-top:2px}
+  .ms li.now b{color:var(--igusa-lt)}
+  .ms li.now span{color:var(--text)}
+  .gstrip{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-top:8px}
+  .g{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+  .g .l1{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .g .t{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .g .m{font-size:11px;color:var(--sub);white-space:nowrap}
+  .tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:6px;margin-right:6px;
+       background:var(--igusa-soft);color:var(--igusa-lt);vertical-align:1px}
+  .g .bar,.top .g .bar{margin:8px 0 0}
+  .g.late .m{color:#c98b6a}
+
+  .check{width:50px;height:50px;font-size:22px;flex:none;color:var(--sub)}
+  .check.on{color:#fff}
+
+  /* schedule */
+  .sched{display:grid;gap:8px}
+  .blk{display:flex;align-items:center;gap:12px;width:100%;min-height:62px;padding:8px 14px;text-align:left}
+  .blk .tm{flex:none;width:52px;font-size:15px;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+  .blk .tm small{display:block;font-size:11px;color:var(--sub);margin-top:1px}
+  .blk .tx{flex:1;min-width:0}
+  .blk .tt{font-size:15px;line-height:1.35}
+  .blk .ss{font-size:11px;color:var(--sub);margin-top:2px;line-height:1.4}
+  .blk .mk{font-size:18px;opacity:0;flex:none}
+  .blk.on .tm small,.blk.on .ss{color:rgba(255,255,255,.75)}
+  .blk.on .mk{opacity:1}
+  .blk.now{border-color:var(--igusa-lt);box-shadow:0 0 0 1px var(--igusa-lt)}
+  .blk.on.now{box-shadow:0 0 18px var(--igusa-glow),0 0 0 1px var(--igusa-lt)}
+  .blk.bonus{border-style:dashed}
+  .blk.bonus .tm{width:auto;font-size:18px}
+  .msg{font-size:12px;color:var(--igusa-lt);margin-top:10px;min-height:16px;text-align:center}
+
+  .focus{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
+  .focus button{height:56px;font-size:24px}
+  .copy{width:100%;height:52px;margin-top:10px;font-size:14px;letter-spacing:.04em}
+
+  /* 営業 */
+  .sales{display:block;width:100%;text-align:left;padding:14px}
+  .sales .tot{display:flex;justify-content:space-between;align-items:baseline}
+  .sales .tot b{font-size:26px;letter-spacing:-.02em}
+  .sales .tot span{font-size:12px;color:var(--sub)}
+  .sales .bar{margin:8px 0 10px;height:5px}
+  .prow{display:grid;grid-template-columns:86px 1fr 74px;gap:8px;align-items:center;font-size:12px;margin-top:6px}
+  .prow .bar{margin:0;height:4px}
+  .prow span:last-child{text-align:right;color:var(--sub);font-variant-numeric:tabular-nums}
+  .sales .hint{font-size:11px;color:var(--igusa-lt);margin-top:10px}
+  .acts4{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .act{position:relative;padding:0;overflow:hidden}
+  .act .main{display:block;width:100%;border:0;border-radius:0;background:transparent;text-align:left;padding:12px 12px 10px;min-height:86px}
+  .act .main b{display:block;font-size:15px}
+  .act .main small{display:block;font-size:11px;color:var(--sub);margin-top:2px}
+  .act .main .n{display:block;font-size:24px;font-weight:700;margin-top:6px}
+  .act .main .n i{font-style:normal;font-size:12px;color:var(--sub);font-weight:400;margin-left:6px}
+  .act.hit{border-color:var(--igusa);box-shadow:0 0 14px rgba(74,124,89,.3)}
+  .act.hit .main .n{color:var(--igusa-lt)}
+  .act .minus{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;font-size:14px;color:var(--sub);padding:0}
+  .brand{display:grid;gap:8px}
+  .bm{padding:12px}
+  .bm .l1{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .bm .l1 b{font-size:15px}
+  .bm .l1 .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+  .bm .l1 .v i{font-style:normal;font-size:12px;color:var(--sub);font-weight:400}
+  .bm .bar{margin:8px 0 6px}
+  .bm .st{font-size:12px;color:var(--sub);line-height:1.5}
+  .bm .st.ahead{color:var(--igusa-lt)}
+  .bm .st.behind{color:#c98b6a}
+  .bupd{width:100%;height:46px;font-size:13px}
+  .bupd.due{border-color:var(--igusa);color:var(--igusa-lt);box-shadow:0 0 14px rgba(74,124,89,.35)}
+  .bupd.done{color:var(--sub)}
+  .btbl{display:grid;grid-template-columns:52px 1fr 1fr;gap:4px 8px;margin:10px 0 6px;font-size:12px;text-align:center}
+  .btbl span{color:var(--sub)}
+  .btbl b{font-weight:600}
+  .bm button.on{width:100%;height:42px;font-size:13px}
+  .pillars{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .pl{padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+  .pl .hd{font-size:12px;color:var(--sub);letter-spacing:.06em}
+  .pl .big{font-size:22px;font-weight:700}
+  .pl .big i{font-style:normal;font-size:12px;color:var(--sub);font-weight:400;margin-left:4px}
+  .pl .ds{font-size:11px;color:var(--sub);line-height:1.45;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .pl button{margin-top:auto;height:40px;font-size:13px}
+  .sbox{margin-top:26px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 12px}
+  .sbox summary{list-style:none;cursor:pointer;padding:14px 2px;font-size:13px;color:var(--sub);display:flex;justify-content:space-between;letter-spacing:.06em}
+  .sbox summary::-webkit-details-marker{display:none}
+  .sbox summary em{font-style:normal;color:var(--igusa-lt)}
+  .sbox[open]{padding-bottom:12px}
+  .relayTop{margin-top:8px}
+  .relayTop .blk{min-height:0}
+  .tier{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:10px 0}
+  .tier button{padding:8px 0;font-size:11px;border-radius:8px}
+  .fitc{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0 4px}
+  .fitc button{padding:9px 6px;font-size:12px;border-radius:8px}
+  .rtab{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+  .rtab button{font-size:12px!important;padding:0 2px}
+  .rtab button{height:44px;font-size:14px}
+  .grp{font-size:12px;color:var(--igusa-lt);letter-spacing:.08em;margin:18px 0 8px}
+  .routes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .routes button{height:52px;font-size:14px}
+  .olist{display:grid;gap:8px}
+  .olist button{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;font-size:14px;text-align:left}
+  .olist button small{color:var(--sub);font-size:11px}
+  .hits li{font-size:13px;line-height:1.5;padding:6px 0;border-top:1px solid var(--line);list-style:none}
+  .hits{padding:0;margin:8px 0 0}
+
+  /* 商談カルテ */
+  .ktab{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0 4px}
+  .ktab button{height:44px;font-size:12px;padding:0 4px}
+  .kf{margin-top:12px}
+  .kf .kl{display:flex;justify-content:space-between;font-size:12px;color:var(--sub);margin:0 2px 4px}
+  .kf .kl b{font-weight:600;color:var(--text)}
+  .kf.ok .kl b{color:var(--igusa-lt)}
+  .kf.ok .card{border-color:rgba(74,124,89,.6)}
+  .kf textarea{min-height:52px;font-size:15px}
+  .phase{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0}
+  .phase button{padding:12px 2px;font-size:12px;border-radius:10px;line-height:1.35}
+  .cgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .cgrid button{min-height:64px;padding:10px;font-size:13px;line-height:1.4;text-align:left}
+  .nd{margin-top:8px;display:block;width:100%;text-align:left;padding:12px 14px}
+  .nd .lb{font-size:11px;color:var(--igusa-lt);letter-spacing:.1em}
+  .nd .nm{font-size:16px;font-weight:600;margin-top:3px}
+  .nd .sb{font-size:12px;color:var(--sub);margin-top:2px}
+  .cfs{position:fixed;inset:0;z-index:40;background:#0f1110;display:none;overflow:auto;
+    padding:calc(20px + env(safe-area-inset-top)) 18px calc(30px + env(safe-area-inset-bottom))}
+  .cfs.open{display:block}
+  .cfs .q{font-size:22px;font-weight:600;line-height:1.5;margin:8px 0 18px;text-align:center}
+  .cfs .cg2{display:grid;gap:12px;max-width:560px;margin:0 auto}
+  .cfs .cg2 button{min-height:92px;font-size:20px;padding:16px;border-radius:16px;text-align:center;line-height:1.4}
+  .cfs .x2{position:sticky;top:0;float:right;width:44px;height:44px;border-radius:50%;font-size:16px}
+
+  .savebtn{display:block;width:100%;height:56px;margin-top:22px;font-size:16px;font-weight:600;
+    background:var(--igusa);border-color:var(--igusa);color:#fff;box-shadow:0 0 18px var(--igusa-glow)}
+
+  /* いつやる */
+  .doRow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;font-size:12px}
+  .doRow .dv{color:var(--igusa-lt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .doRow .dv.miss{color:#c98b6a}
+  .doRow button{flex:none;padding:7px 12px;font-size:12px;border-radius:999px}
+  .doRow button.ask{border-color:var(--igusa);color:var(--igusa-lt)}
+  .doEd{display:grid;grid-template-columns:1fr 92px auto;gap:6px;margin-top:8px;align-items:center}
+  .doEd input{font-size:15px;padding:8px 6px;border:1px solid var(--line);border-radius:10px;min-width:0}
+  .doEd button{padding:9px 12px;font-size:13px}
+  .doEd .clr{grid-column:1/-1;background:none;border:0;color:var(--sub);font-size:11px;padding:2px;text-align:left}
+  .doHint{font-size:11px;color:var(--sub);margin-top:6px;line-height:1.5}
+  .doCard{margin-top:22px;border-color:var(--igusa);box-shadow:0 0 16px rgba(74,124,89,.3)}
+  .doCard .lb{font-size:11px;color:var(--igusa-lt);letter-spacing:.1em}
+  .doCard .it{display:flex;justify-content:space-between;gap:10px;font-size:16px;margin-top:6px}
+  .doCard .it b{font-weight:600;flex:none;color:var(--igusa-lt);font-variant-numeric:tabular-nums}
+
+  /* relay */
+  .relay-in{margin-top:10px;border-color:rgba(74,124,89,.5)}
+  .relay-in .rl{font-size:11px;color:var(--igusa-lt);letter-spacing:.1em;padding:2px 4px 0}
+  .blk .relay{margin-top:6px;font-size:13px;line-height:1.45;color:var(--text);background:var(--igusa-soft);
+    border-left:2px solid var(--igusa);border-radius:6px;padding:6px 8px}
+  .blk .relay small{display:block;font-size:10px;color:var(--igusa-lt);letter-spacing:.08em;margin-bottom:2px}
+  .blk.on .relay{background:rgba(255,255,255,.14);border-left-color:#fff}
+  .blk.on .relay small{color:rgba(255,255,255,.85)}
+
+  /* reach */
+  .rtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .rt{text-align:center;padding:12px 2px}
+  .rt b{display:block;font-size:20px}
+  .rt span{font-size:10px;color:var(--sub)}
+  .rt.glow b{color:var(--igusa-lt)}
+  .rt.glow{border-color:rgba(74,124,89,.6);box-shadow:0 0 12px rgba(74,124,89,.25)}
+  .rtoday{border-color:rgba(74,124,89,.6);box-shadow:0 0 14px rgba(74,124,89,.2)}
+  .rtoday .lb{font-size:11px;color:var(--igusa-lt);letter-spacing:.1em}
+  .rtoday .nm{font-size:18px;font-weight:600;margin:4px 0 2px}
+  .rtoday .sb{font-size:12px;color:var(--sub);line-height:1.5}
+  .rtoday .ac{display:flex;gap:8px;margin-top:10px}
+  .rtoday .ac button{height:48px;padding:0 16px;font-size:14px}
+  .rtoday .ac button:first-child{flex:1}
+  .rchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .rchip{padding:8px 11px;font-size:12px;max-width:100%;text-align:left}
+  .rchip .rn{display:block;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:5px}
+  .sds{display:flex;gap:3px}
+  .sd{width:12px;height:4px;border-radius:2px;background:#2c322f}
+  .sd.on{background:var(--igusa);box-shadow:0 0 6px var(--igusa-glow)}
+  .ladder{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:10px 0}
+  .ladder button{padding:9px 0;font-size:11px;border-radius:8px}
+  .rc2 + .rc2{margin-top:10px}
+  .rc2 .hd{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .rc2 .hd b{font-size:15px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rc2 .acts{display:flex;gap:8px;align-items:center}
+  .rc2 .acts button{padding:10px 14px;font-size:13px}
+  .rc2 .acts .del{padding:8px 10px;font-size:11px;color:var(--sub);margin-left:auto}
+  .rc2 input{font-size:14px;margin-top:6px;border-top:1px solid var(--line);padding-top:10px}
+
+  /* map */
+  .map{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+  .c{aspect-ratio:1;border-radius:4px;border:1px solid var(--line);background:transparent;padding:0;min-width:0}
+  .c.fut{background:#141715;border-color:#1a1e1b}
+  .c.s0{background:transparent;border-color:#2c322f}
+  .c.s1{background:rgba(74,124,89,.22);border-color:transparent}
+  .c.s2{background:rgba(74,124,89,.6);border-color:transparent}
+  .c.s3{background:var(--igusa);border-color:transparent;box-shadow:0 0 8px var(--igusa-glow)}
+  .c.today{outline:1.5px solid var(--text);outline-offset:1px}
+  .cap{font-size:12px;color:var(--sub);margin-top:10px;text-align:center;min-height:16px}
+  .legend{display:flex;gap:10px;justify-content:center;font-size:10px;color:var(--sub);margin-top:6px;flex-wrap:wrap}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+
+  .week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .d{background:var(--card);border:1px solid var(--line);border-radius:10px;text-align:center;padding:8px 0 7px;min-width:0}
+  .d small{display:block;color:var(--sub);font-size:10px}
+  .d strong{display:block;font-size:14px;margin-top:2px}
+  .d em{display:block;font-style:normal;font-size:9px;color:var(--sub)}
+  .d.min{border-color:rgba(74,124,89,.6)}
+  .d.full{border-color:var(--igusa);background:var(--igusa-soft);box-shadow:0 0 12px rgba(74,124,89,.25)}
+  .d.full strong,.d.min strong{color:var(--igusa-lt)}
+  .d.today{outline:1px dashed #3a413d;outline-offset:2px}
+  .d.zero strong{color:#555c58}
+  .stats{display:flex;gap:8px;margin-top:12px}
+  .stat{flex:1;text-align:center;padding:14px 4px}
+  .stat b{display:block;font-size:22px}
+  .stat span{font-size:10px;color:var(--sub)}
+  .stat.glow b{color:var(--igusa-lt)}
+
+  .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px}
+  .actions button{height:52px;font-size:14px;position:relative}
+  .dot{position:absolute;top:8px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--igusa);box-shadow:0 0 8px var(--igusa-glow)}
+  .note{margin-top:22px;text-align:center;font-size:11px;color:#4b524e}
+
+  .toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translate(-50%,20px);
+    background:var(--igusa);color:#fff;padding:12px 20px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;
+    transition:opacity .25s,transform .25s;z-index:30;box-shadow:0 0 20px var(--igusa-glow);white-space:nowrap}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  /* sheet */
+  .ov{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:10}
+  .ov.open{display:block}
+  .sheet{position:absolute;left:0;right:0;bottom:0;top:6vh;background:var(--bg);border-top:1px solid var(--line);
+    border-radius:18px 18px 0 0;overflow:auto;padding:16px 16px calc(40px + env(safe-area-inset-bottom))}
+  .sheet .in{max-width:480px;margin:0 auto}
+  .sh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .sh b{font-size:17px}
+  .x{width:40px;height:40px;border-radius:50%}
+  .sub{font-size:12px;color:var(--sub);margin:4px 0 8px;line-height:1.6}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{padding:9px 13px;font-size:13px;border-radius:999px}
+  .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .seg button{padding:11px 0;font-size:14px}
+  .add{width:100%;height:50px;margin-top:12px;font-size:15px}
+  .gi{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px}
+  .gi + .gi{margin-top:8px}
+  .gi .t{font-size:14px}
+  .gi .m{font-size:11px;color:var(--sub);margin-top:2px;line-height:1.5}
+  .gi .b{display:flex;flex-direction:column;gap:6px;flex:none}
+  .gi .b button{padding:7px 10px;font-size:12px}
+  .gi.done{opacity:.5}
+  .kv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
+  .kv div{text-align:center;padding:10px 4px}
+  .kv b{display:block;font-size:20px}
+  .kv span{font-size:10px;color:var(--sub)}
+  textarea{min-height:64px;line-height:1.5}
+  .rg{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--sub);margin-top:8px}
+  .rg input{flex:1;accent-color:var(--igusa);padding:0}
+  .rg span:last-child{width:44px;text-align:right}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .ed{display:grid;grid-template-columns:104px 1fr;gap:6px;margin-bottom:8px;padding:2px 8px}
+  .ed input{font-size:15px}
+  .ed input:first-child{font-variant-numeric:tabular-nums;color:var(--igusa-lt)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="app">NORIGONI DAILY OS</div>
+    <header>
+      <div class="date" id="date"></div>
+      <div class="day" id="day"></div>
+    </header>
+    <div class="bar"><i id="prog"></i></div>
+    <div class="why"><textarea id="why" rows="1" placeholder="なぜやる？ 目的を書く" maxlength="120"></textarea></div>
+    <details class="ms" id="ms">
+      <summary><span>北極星 ・ 逆算マイルストーン</span></summary>
+      <ul id="msList"></ul>
+    </details>
+    <div class="gstrip" id="gstrip"></div>
+  </div>
+
+  <h2>来期5,000万円 <em id="salesSub"></em></h2>
+  <button class="card sales" id="sales"></button>
+
+  <div id="doToday"></div>
+
+  <h2>今日のハイライト</h2>
+  <div class="card row">
+    <input type="text" id="highlight" placeholder="今日の最優先を1つだけ" maxlength="80" autocomplete="off">
+    <button class="check" id="hlDone" aria-label="ハイライト完了">✓</button>
+  </div>
+
+  <details class="sbox" id="schedBox">
+    <summary><span>タイムスケジュール</span><em id="schedCount"></em></summary>
+    <div class="sched" id="sched"></div>
+  </details>
+  <div class="relayTop" id="relayTop"></div>
+  <div class="msg" id="msg"></div>
+
+  <h2>今日の営業アクション <em id="actSub"></em></h2>
+  <div class="acts4" id="acts"></div>
+  <div id="nextDeal"></div>
+  <div id="rtoday"></div>
+
+  <h2>ブランドメーター <em>建築会社に選ばれる証拠</em></h2>
+  <div class="brand" id="brand"></div>
+
+  <h2>4つの柱 <em>今月</em></h2>
+  <div class="pillars" id="pillars"></div>
+  <button class="copy" id="openReach">リーチ帳を開く</button>
+
+
+  <h2>夜のチューニング</h2>
+  <div class="focus" id="focus"></div>
+  <div class="card"><input type="text" id="memo" placeholder="一言メモ" maxlength="120" autocomplete="off"></div>
+  <div class="card relay-in"><div class="rl">明朝5時に試すこと</div><input type="text" id="try5" placeholder="朝AIで最初にやることを1行で" maxlength="80" autocomplete="off"></div>
+  <button class="copy" id="copy">軍師へ報告用コピー</button>
+
+  <h2>100日マップ</h2>
+  <div class="map" id="map"></div>
+  <div class="cap" id="cap">マスをタップで詳細</div>
+  <div class="legend">
+    <span><i style="background:var(--igusa)"></i>営業行動5以上</span>
+    <span><i style="background:rgba(74,124,89,.6)"></i>3〜4</span>
+    <span><i style="background:rgba(74,124,89,.22)"></i>1〜2</span>
+    <span><i style="border:1px solid #2c322f"></i>0</span>
+  </div>
+
+  <h2>過去7日間の達成率</h2>
+  <div class="week" id="week"></div>
+  <div class="stats">
+    <div class="card stat" id="statToday"><b>0%</b><span>今日</span></div>
+    <div class="card stat" id="statWeek"><b>0%</b><span>7日平均</span></div>
+    <div class="card stat" id="statStreak"><b>🔥0日</b><span>連続（最低ライン以上）</span></div>
+  </div>
+
+  <div class="actions">
+    <button id="openGoals">目標・スケジュール設定</button>
+    <button id="openReview">週次振り返り<span class="dot" id="rdot" style="display:none"></span></button>
+  </div>
+  <button class="savebtn" id="saveNow">現在の数値で保存</button>
+  <div class="note" id="saveNote">入力はその場で自動保存されます。保存ボタンは「この時点」を控えとして残します</div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="cfs" id="cfs"></div>
+<div class="ov" id="ov"><div class="sheet"><div class="in" id="sheet"></div></div></div>
+
+<script>
+(function(){
+  const START = new Date(2026, 10, 21);
+  const TOTAL = 100;
+  const KEY = 'oni100_v5';          // 日々の記録
+  const MKEY = 'oni100_meta_v1';     // 目的・目標・振り返り・設定
+  const FOCUS = ['◎','○','△'];
+  const WD = ['日','月','火','水','木','金','土'];
+  const TIERS = {short:'短期', mid:'中期', long:'長期'};
+  const TIER_DAYS = {short:7, mid:30, long:100};
+  const TIER_ORDER = ['short','mid','long'];
+  const MILESTONES = [
+    ['2037年','10兆円'],['2030年','10億'],['2028年1-2月','長男と渡米'],
+    ['2027年','売上5,000万＆3月アメリカ1号'],['2026年','売上2,500万']];
+
+  const DEF = {
+    am_ai:   {t:'05:00-06:00', title:'朝AI', sub:'第1ゴールデンタイム・60分'},
+    gym:     {t:'06:00-08:00', title:'送迎＆ジム', sub:'戦略シミュレーション'},
+    reach:   {t:'08:00-08:45', title:'リーチ', sub:'今日の1社に届ける・リストを育てる'},
+    boss_am: {t:'08:00-12:00', title:'社長業・売上2500万必達', sub:'午前'},
+    boss_am_tt:{t:'08:45-12:00', title:'社長業・売上2500万必達', sub:'午前'},
+    reset:   {t:'12:00-13:00', title:'昼リセット', sub:'15分仮眠・歩行'},
+    boss_pm: {t:'13:00-16:00', title:'社長業・16時完全撤収', sub:''},
+    brain:   {t:'16:15-17:15', title:'脳のリセット', sub:'筋トレ・60分'},
+    brain_tt:{t:'16:15-16:45', title:'脳のリセット', sub:'ウォーキング・30分'},
+    pm_ai:   {t:'17:20-18:20', title:'夕AI', sub:'第2ゴールデンタイム・Deep Work 60分'},
+    pm_ai_tt:{t:'16:50-18:20', title:'夕AI', sub:'第2ゴールデンタイム・Deep Work 90分'},
+    family:  {t:'18:20-20:15', title:'家族時間', sub:'完全オフ'},
+    analog:  {t:'20:15-21:15', title:'アナログタイム', sub:'手帳・読書30分 ※火曜は変則/休'},
+    night:   {t:'21:15-22:00', title:'ナイトルーティーン＆22時完全就寝', sub:''},
+    bonus:   {t:'', title:'土日ボーナス：AI学習＋1〜2時間上乗せ', sub:''}
+  };
+  const ORDER = ['am_ai','gym','boss_am','reset','boss_pm','brain','pm_ai','family','analog','night'];
+  const CHIP_IDS = ['am_ai','gym','reach','boss_am','reset','boss_pm','brain','pm_ai','family','analog','night'];
+  const EDIT_KEYS = ['am_ai','gym','reach','boss_am','boss_am_tt','reset','boss_pm','brain','brain_tt','pm_ai','pm_ai_tt','family','analog','night'];
+  const EDIT_NOTE = {reach:'（火・木）', boss_am:'（火・木以外）', boss_am_tt:'（火・木）', brain:'（月水金・土日）', brain_tt:'（火・木）', pm_ai:'（月水金・土日）', pm_ai_tt:'（火・木）'};
+
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2,'0');
+  const keyOf = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  const parseKey = k => { const [y,m,d] = k.split('-').map(Number); return new Date(y,m-1,d); };
+  const addDays = (d,n) => new Date(d.getFullYear(), d.getMonth(), d.getDate()+n);
+  const diffDays = (a,b) => Math.round((b-a)/86400000);
+  const todayDate = () => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); };
+  const h = (tag, props, ...kids) => {
+    const e = document.createElement(tag);
+    for (const k in (props||{})){
+      if (k==='class') e.className = props[k];
+      else if (k.startsWith('on')) e[k] = props[k];
+      else e.setAttribute(k, props[k]);
+    }
+    kids.flat().forEach(c => { if (c!=null && c!==false) e.append(c); });
+    return e;
+  };
+  function weekKey(d){ const dow = (d.getDay()+6)%7; return keyOf(addDays(d, -dow)); } // 月曜始まり
+
+  /* ---------- 保存 ---------- */
+  const load = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) || def; } catch(e){ return def; } };
+  let store = load(KEY, {});
+  let meta = Object.assign({why:'', minB:['am_ai','analog'], goals:[], reviews:{}, ov:{}, reach:[], rlog:[], ach:{}, sales:{}, brand:[], inq:[], orders:[], hits:[], blogs:[], ktab:0, cards:null, wt:{post:5, viral:3, review:3, touch:5}, rtab:'exist'}, load(MKEY, {}));
+  const saveStore = () => { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch(e){} };
+  const saveMeta  = () => { try { localStorage.setItem(MKEY, JSON.stringify(meta)); } catch(e){} };
+
+  // 初回のみ：100日ゴールを長期目標として登録（編集・削除可）
+  if (!meta.seeded5){
+    const c = keyOf(new Date()), due = '2027-02-28';
+    meta.goals.forEach(g => { if (g.habits){ delete g.habits; } if (!g.blocks) g.blocks = []; });
+    [{k:'体重 73', title:'体重 73kg未満', metric:'weight', base:74.4, target:73, unit:'kg'},
+     {k:'体脂肪率 11', title:'体脂肪率 11%', metric:'fat', base:13.9, target:11, unit:'%'},
+     {k:'アメリカ進出', title:'アメリカ進出 進行度80%以上（試作完了・受注後すぐ出荷できる状態）', manual:0},
+     {k:'既存事業の営業', title:'既存事業の営業を仕組み化する', manual:0},
+     {k:'理念の合う大手', title:'理念の合う大手建築会社を2〜3件増やす（エコワークス・安成工務店のような先）', manual:0},
+     {k:'BtoC比率', title:'BtoC比率を50%→70%に（BtoB依存を下げる）', manual:0}
+    ].forEach((w,i) => {
+      let g = meta.goals.find(x => x.title.startsWith(w.k));
+      if (!g){ g = {id:Date.now()+i, tier:'long', title:w.title, due, created:c, blocks:[], done:false, manual:null}; meta.goals.push(g); }
+      if (w.metric) Object.assign(g, {metric:w.metric, base:w.base, target:w.target, unit:w.unit});
+      else if (g.manual==null && w.manual!=null) g.manual = w.manual;
+    });
+    const wk0 = weekKey(new Date(2026,10,23));
+    const r0 = meta.reviews[wk0] = meta.reviews[wk0] || {saved:false};
+    if (!r0.weight) r0.weight = '74.4';
+    if (!r0.fat) r0.fat = '13.9';
+    meta.seeded5 = true; saveMeta();
+  }
+
+  // 体脂肪は11〜12%を目標レンジに（開始時13.9%）
+  if (!meta.seeded6){
+    meta.goals.forEach(g => {
+      if (g.metric === 'fat') Object.assign(g, {title:'体脂肪率 11〜12%（開始時 13.9%）', base:13.9, target:12, target2:11, unit:'%', targetLabel:'11〜12%'});
+      if (g.metric === 'weight') g.targetLabel = '73kg未満';
+    });
+    meta.seeded6 = true; saveMeta();
+  }
+
+  if (!meta.seeded7){
+    const g = meta.goals.find(x => x.title.startsWith('理念の合う大手'));
+    if (g) g.auto = 'relation';
+    meta.seeded7 = true; saveMeta();
+  }
+
+  // リーチ帳の初期リスト（2026/11/24 公開情報で確認した正式名称）
+  if (!meta.seeded8){
+    [{key:'エコワークス', name:'エコワークス株式会社', url:'https://www.eco-works.jp/',
+      info:'代表取締役社長 小山貴史 ／ 2004年創業'},
+     {key:'安成', name:'株式会社安成工務店', url:'https://www.yasunari.co.jp/',
+      info:'代表取締役社長 中村圭（会長 安成信次） ／ 1951年創立'},
+     {key:'快建築', name:'有限会社快建築舎', url:'',
+      info:'※法人種別は情報サイトの記載。公式サイトで要確認'},
+     {key:'安恒組', name:'株式会社安恒組', url:'http://www.yasutsune-gumi.jp/',
+      info:'代表取締役 安恒忠男 ／ 1897年（明治30年）創業'}
+    ].forEach((w,i) => {
+      let c = meta.reach.find(x => x.name.includes(w.key));
+      if (!c){ c = {id:Date.now()+i, kind:'fit', stage:0, touches:0, replied:false, memo:'', created:keyOf(new Date())}; meta.reach.push(c); }
+      c.name = w.name; c.url = w.url; c.info = w.info;
+    });
+    meta.seeded8 = true; saveMeta();
+  }
+
+  // 2026/11/24 追記：エコワークスの拠点情報・安恒組の担当者・原口建設（七隈）
+  if (!meta.seeded9){
+    const upd = [
+      {key:'エコワークス', info:'代表取締役社長 小山貴史 ／ 2004年創業'},
+      {key:'安恒組', info:'代表取締役 安恒忠男 ／ 1897年（明治30年）創業', memo:'安恒久美さん（福岡）'}
+    ];
+    upd.forEach(w => {
+      const c = meta.reach.find(x => x.name.includes(w.key));
+      if (c){ c.info = w.info; if (w.memo && !c.memo) c.memo = w.memo; }
+    });
+    if (!meta.reach.some(x => x.name.includes('原口建設'))){
+      meta.reach.push({id:Date.now(), name:'株式会社原口建設', kind:'fit', stage:0, touches:0, replied:false, memo:'', created:keyOf(new Date()),
+        url:'https://www.haraguchi-kensetsu.com/',
+        info:'代表 原口義彦 ／ 1996年創立（元・有限会社原口建設）'});
+    }
+    meta.seeded9 = true; saveMeta();
+  }
+
+  // 2026/11/25 追記：快建築舎の確認結果・エコワークスの拠点情報
+  if (!meta.seeded10){
+    [{key:'エコワークス', info:'代表取締役社長 小山貴史 ／ 熊本・静岡にも拠点'},
+     {key:'快建築舎', url:'http://kai-home.jp/', info:'代表取締役 石橋慶一 ／ 設立 昭和48年10月'}
+    ].forEach(w => {
+      const c = meta.reach.find(x => x.name.includes(w.key));
+      if (c){ c.info = w.info; if (w.url) c.url = w.url; }
+    });
+    meta.seeded10 = true; saveMeta();
+  }
+
+  if (!meta.seeded11){
+    meta.goals.forEach(g => { if (g.auto==='relation' || g.metric) g.pin = true; });
+    meta.seeded11 = true; saveMeta();
+  }
+
+  // 2026/11/25 イ草プロダクト試作の逆算スケジュール
+  if (!meta.seeded12){
+    const c = keyOf(new Date());
+    [['short','イ草プロダクト 試作1号（手縫い）を作る','2026-12-13',true],
+     ['short','試作2号（使って直した版）を作る','2026-12-31',false],
+     ['mid','量産の縫い手・送料と関税・価格を決める','2027-01-31',false],
+     ['mid','販売ページと発送の準備を整える','2027-02-28',false]
+    ].forEach(([tier,title,due,pin],i) => {
+      if (!meta.goals.some(g => g.title===title))
+        meta.goals.push({id:Date.now()+i, tier, title, due, created:c, blocks:[], done:false, manual:null, pin});
+    });
+    meta.seeded12 = true; saveMeta();
+  }
+
+  // 2026/11/25 営業中心へ：既存取引先・ブランドの出発点
+  if (!meta.seeded13){
+    const c = keyOf(new Date());
+    meta.reach.forEach(x => { if (x.kind!=='exist' && !x.checks) x.checks = [false,false,false,false]; });
+    const hg = meta.reach.find(x => x.name.includes('原口建設'));
+    if (hg){ hg.kind = 'exist'; hg.tier = 4; }
+    [['株式会社三宅建築工房',0,''],['田川市住宅管理公社',0,''],['でんホーム株式会社',0,''],
+     ['株式会社早田組',1,''],['株式会社清川建設',1,''],
+     ['株式会社カワゴエ',2,''],
+     ['株式会社ナカジマ建設',3,''],['ふくろう不動産株式会社',3,'']
+    ].forEach(([name,tier,info],i) => {
+      if (!meta.reach.some(x => x.name===name))
+        meta.reach.push({id:Date.now()+100+i, name, kind:'exist', tier, info, stage:0, touches:0, orders:0, memo:'', created:c});
+    });
+    if (!meta.brand.length) meta.brand.push({d:'2026-11-25', ig:8075, yt:971, gr:null});
+    meta.seeded13 = true; saveMeta();
+  }
+
+  // 2026/11/25 既存取引先の全社（Googleスプレッドシート「パートナー企業」71件）・発信目標5・TikTok出発点
+  if (!meta.seeded14){
+    const c = keyOf(new Date());
+    const norm = n => n.replace(/\s+/g,'');
+    [["株式会社三宅建築工房", ""], ["株式会社ナカジマ建設", ""], ["株式会社早田組", ""], ["利工務店", ""], ["株式会社住幸房", ""], ["ふくろう不動産株式会社", ""], ["株式会社さくらトータルライフ", ""], ["有限会社スリーピース", ""], ["有限会社リンク中央", ""], ["有限会社原忠", ""], ["小松工務店", ""], ["株式会社ケンタツ", ""], ["株式会社栄建築", ""], ["有限会社大和工務店", ""], ["株式会社N-STYLE", ""], ["株式会社カグヤ", ""], ["九州ノザワ株式会社 リーベンホーム", ""], ["株式会社knot建築企画", ""], ["デイサービス こころの森", ""], ["大石工務店", ""], ["藤井工務店", ""], ["社会福祉法人 法楽荘 どんぐり保育園", ""], ["源じいの森", ""], ["大津留板金", ""], ["木原山建設", ""], ["MIYABI", ""], ["政建築-ohana house-", ""], ["カイケンコーポレーション株式会社", ""], ["株式会社清川建設", ""], ["矢原建築", ""], ["有限会社マルヘイ住宅", ""], ["有限会社小林住宅産業", ""], ["下田建築", ""], ["株式会社藤井工務店", ""], ["川越建設", ""], ["大幸建設", ""], ["株式会社春本産業", ""], ["イエノコト株式会社", ""], ["株式会社鳥越ネットワーク", ""], ["株式会社大匠建設", ""], ["有限会社ハートフルはしもと", ""], ["株式会社フソウ", ""], ["大村 こずえ", ""], ["野見山 広明", ""], ["松尾 清二（インテリア松尾）", ""], ["有限会社成田建設", ""], ["株式会社ミヤケン", ""], ["株式会社カワゴエ", ""], ["有限会社植田組", ""], ["藤野創業株式会社", ""], ["株式会社エイケン", ""], ["藤川工務店", ""], ["柏木商事", ""], ["道の駅おおとう桜街道「さくら館」", ""], ["森高ホームサービス", ""], ["株式会社タテイシ建設", ""], ["ウィング", ""], ["古川建築", ""], ["株式会社久木原工務店", ""], ["プラスホーム 福田孝博", ""], ["株式会社ローザ", ""], ["株式会社アルカコウキ", ""], ["緑屋工務店", ""], ["株式会社アジアン・マーケット", ""], ["でんホーム株式会社", ""], ["村上孝仁", ""], ["株式会社原口建設", ""], ["真宗大谷派 西岸寺", ""], ["村上工産", ""], ["田川市住宅管理公社", ""], ["大任役場", ""]].forEach(([name,info],i) => {
+      const hit = meta.reach.find(x => norm(x.name) === norm(name));
+      if (hit){ if (hit.kind!=='exist'){ hit.kind='exist'; if (hit.tier==null) hit.tier = 4; } if (info && hit.name.includes('原口')) hit.info = info + ' ／ 代表 原口義彦'; else if (info && !hit.info) hit.info = info; }
+      else meta.reach.push({id:Date.now()+1000+i, name, kind:'exist', tier:4, info, stage:0, touches:0, orders:0, memo:'', created:c});
+    });
+    if (meta.wt.post === 7) meta.wt.post = 5;
+    const b0 = meta.brand.find(x => x.d === '2026-11-25') || (meta.brand.unshift({d:'2026-11-25', ig:8075, yt:971}), meta.brand[0]);
+    if (b0.tt == null) b0.tt = 1025;
+    meta.seeded14 = true; saveMeta();
+  }
+
+  // 2026/11/25 ブログの過去実績（9月6本・10月6本・11月3本）
+  if (!meta.seeded15){
+    meta.blogs = meta.blogs || [];
+    [['2026-09',6],['2026-10',6],['2026-11',3]].forEach(([m,n]) => {
+      const have = meta.blogs.filter(d => d.slice(0,7)===m).length;
+      for (let i=have; i<n; i++) meta.blogs.push(m+'-'+pad(i*4+1));
+    });
+    meta.blogs.sort(); meta.seeded15 = true; saveMeta();
+  }
+
+  // 2026/11/25 Googleの口コミ 18件・★5.0
+  if (!meta.seeded17){
+    const b0 = meta.brand.find(x => x.d === '2026-11-25');
+    if (b0){ if (b0.gr == null) b0.gr = 18; if (b0.gs == null) b0.gs = 5.0; }
+    else meta.brand.push({d:'2026-11-25', ig:8075, yt:971, tt:1025, gr:18, gs:5.0});
+    meta.brand.sort((a,b) => a.d.localeCompare(b.d));
+    meta.seeded17 = true; saveMeta();
+  }
+
+  // 2026/11/25 パートナーSHOP（スプレッドシート「パートナーSHOP」15店）
+  if (!meta.seeded18){
+    const c0 = keyOf(new Date());
+    [["ラピュタファーム", "IG 3,149 ／ 連絡：LINE ／ 委託料20%"], ["キタキューコロンブス", "IG 2,464 ／ 連絡：LINE ／ 委託料30%"], ["道の駅大任", "IG 6,035 ／ 連絡：Instagram ／ 委託料30%"], ["AndtheSoil", "IG 7,644 ／ 連絡：Instagram"], ["stripes", "IG 592 ／ 連絡：Instagram ／ 委託料30%"], ["cohaco", "IG 45 ／ 連絡：LINE"], ["えこわいず", "IG 3,044 ／ 連絡：メール ／ 返事もらえず"], ["コトツキ", "IG 7,003 ／ 連絡：メール"], ["Nayuta", "IG 25,000 ／ 連絡：メール ／ 委託料30%"], ["Baum", "IG 3,065 ／ 委託料30%"], ["ひふみ", "連絡：Instagram"], ["ナチゅ村 千早店", "IG 2,837 ／ 連絡：メール"], ["ナチゅ村 パルコ店", "IG 3,538"], ["喫茶 百葉", "IG 1,969"], ["naturable shop&cafe", "IG 4,063 ／ 連絡：Instagram DM"]].forEach(([name,info],i) => {
+      if (!meta.reach.some(x => x.kind==='shop' && x.name===name))
+        meta.reach.push({id:Date.now()+3000+i, name, kind:'shop', sst:0, info, stage:0, touches:0, orders:0, memo:'', created:c0});
+    });
+    meta.seeded18 = true; saveMeta();
+  }
+
+  // 2026/11/26 住所・電話を全件から外す／ランクをS〜Dへ（旧：よく来る→A、波がある→B、小口・元気がない→C、休眠→D）
+  if (!meta.seeded19){
+    const ADDR = /(TEL|FAX|〒|\d+-\d+|丁目|番地|\d番|号|[都道府県]|市|区|町|村|郡|\d階|\dF|階\)|）$)/;
+    const KEEP = /^\s*(代表|IG|連絡|委託料|設立|創業|\d{4}年|熊本・静岡)/;
+    meta.reach.forEach(c => {
+      if (c.info) c.info = c.info.split(/\s*／\s*/).filter(x => x.trim() && (KEEP.test(x) || !ADDR.test(x))).join(' ／ ');
+      if (c.kind==='exist') c.tier = [1,2,3,3,4][c.tier ?? 4];
+    });
+    meta.seeded19 = true; saveMeta();
+  }
+
+  /* ---------- スケジュール ---------- */
+  function mk(id, key){
+    const d = DEF[key], o = (meta.ov||{})[key] || {};
+    return {id, key, t:o.t || d.t, title:o.title || d.title, sub:d.sub};
+  }
+  function blocksFor(date){
+    const dow = date.getDay();
+    const tt = (dow===2 || dow===4), weekend = (dow===0 || dow===6);
+    const list = ORDER.map(id => mk(id, (tt && (id==='brain'||id==='pm_ai'||id==='boss_am')) ? id+'_tt' : id));
+    if (tt) list.splice(2, 0, mk('reach','reach'));
+    if (weekend) list.push(mk('bonus','bonus'));
+    return list;
+  }
+  const nameOf = id => mk(id,id).title;
+  function parseT(t){
+    const m = /^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/.exec(t||'');
+    return m ? [(+m[1])*60+(+m[2]), (+m[3])*60+(+m[4])] : null;
+  }
+
+  const blank = () => ({hl:'', hlDone:false, b:{}, f:null, memo:'', try5:''});
+  const get = k => Object.assign(blank(), store[k] || {});
+  function dayStat(k){
+    const bl = blocksFor(parseKey(k)), r = get(k);
+    return {done: bl.filter(b => r.b[b.id]).length, total: bl.length};
+  }
+  const count = k => dayStat(k).done;
+  function minMet(k){
+    const bl = blocksFor(parseKey(k)).map(b => b.id), r = get(k);
+    const need = meta.minB.filter(id => bl.includes(id));
+    if (!need.length) { const s = dayStat(k); return s.done === s.total; }
+    return need.every(id => r.b[id]);
+  }
+
+  // 2026/11/25 の「明朝5時に試すこと」（初回のみ）
+  if (!meta.seeded16){
+    const k0 = '2026-11-25', r0 = Object.assign(blank(), store[k0] || {});
+    if (!r0.try5 || r0.try5.startsWith('試作1号の「いつやる」')){ r0.try5 = 'Claudeと一緒に、Daily OSをiPhoneのホーム画面で使えるようにする'; store[k0] = r0; saveStore(); }
+    meta.seeded16 = true; saveMeta();
+  }
+
+  let curKey = keyOf(new Date());
+  let rec = get(curKey);
+  const commit = () => { store[curKey] = rec; saveStore(); renderAll(); };
+
+  /* ---------- 今日の入力 ---------- */
+  const focusEls = FOCUS.map((c,i) => {
+    const b = h('button',{},c);
+    b.onclick = () => { rec.f = (rec.f === i ? null : i); commit(); };
+    $('focus').appendChild(b);
+    return b;
+  });
+  $('hlDone').onclick = () => { rec.hlDone = !rec.hlDone; commit(); };
+  $('highlight').addEventListener('input', e => { rec.hl = e.target.value; store[curKey] = rec; saveStore(); });
+  $('memo').addEventListener('input', e => { rec.memo = e.target.value; store[curKey] = rec; saveStore(); });
+  $('try5').addEventListener('input', e => { rec.try5 = e.target.value; store[curKey] = rec; saveStore(); });
+  const relayToday = () => (get(keyOf(addDays(parseKey(curKey), -1))).try5 || '').trim();
+  const DEFAULT_WHY = '自然から始まり、愛に満たされていく世界をつくる。';
+  const OLD_WHY = '地球を株主とし、世界平和と人間性の回復を目的と定め、感謝と感動が渦巻く世界を創る';
+  const fitWhy = () => { const w = $('why'); w.style.height = 'auto'; w.style.height = w.scrollHeight + 'px'; };
+  if (!meta.why || meta.why === OLD_WHY || !meta.whyV3){ meta.why = DEFAULT_WHY; meta.whyV3 = true; saveMeta(); }
+  $('why').addEventListener('input', e => { meta.why = e.target.value; saveMeta(); fitWhy(); });
+  $('why').value = meta.why;
+  fitWhy();
+
+  function renderSchedule(){
+    const el = $('sched'); el.textContent = '';
+    const blocks = blocksFor(todayDate());
+    const nw = new Date(), mins = nw.getHours()*60 + nw.getMinutes();
+    blocks.forEach(b => {
+      const pt = parseT(b.t);
+      const now = pt && mins >= pt[0] && mins < pt[1];
+      const done = !!rec.b[b.id];
+      const parts = (b.t||'').split('-');
+      const tm = b.t ? h('span',{class:'tm'}, (parts[0]||'').trim(), h('small',{}, '–'+(parts[1]||'').trim()))
+                     : h('span',{class:'tm'}, '★');
+      const btn = h('button',{class:'blk'+(done?' on':'')+(now?' now':'')+(b.id==='bonus'?' bonus':'')},
+        tm,
+        h('span',{class:'tx'}, h('div',{class:'tt'}, b.title), b.sub ? h('div',{class:'ss'}, b.sub) : null,
+          (b.id==='am_ai' && relayToday()) ? h('div',{class:'relay'}, h('small',{},'昨夜の自分から'), relayToday()) : null),
+        h('span',{class:'mk'},'✓'));
+      btn.onclick = () => { rec.b[b.id] = !rec.b[b.id]; commit(); };
+      el.appendChild(btn);
+    });
+    const s = dayStat(curKey);
+    const cur = blocks.find(b => { const pt = parseT(b.t); return pt && mins >= pt[0] && mins < pt[1]; });
+    $('schedCount').textContent = `${s.done}/${s.total}` + (cur ? ` ・ 今：${cur.title}` : '');
+    const rt = $('relayTop'); rt.textContent = '';
+    const rl = relayToday();
+    if (rl && !rec.b.am_ai && !$('schedBox').open){
+      const am = blocks.find(b => b.id==='am_ai');
+      const btn = h('button',{class:'blk'},
+        h('span',{class:'tm'}, '05:00', h('small',{},'–06:00')),
+        h('span',{class:'tx'}, h('div',{class:'tt'}, am ? am.title : '朝AI'), h('div',{class:'relay'}, h('small',{},'昨夜の自分から'), rl)),
+        h('span',{class:'mk'},'✓'));
+      btn.onclick = () => { rec.b.am_ai = true; commit(); };
+      rt.append(btn);
+    }
+  }
+
+  function paint(){
+    renderSchedule();
+    focusEls.forEach((b,i) => b.classList.toggle('on', rec.f === i));
+    $('hlDone').classList.toggle('on', !!rec.hlDone);
+    const hl = $('highlight'); if (hl.value !== rec.hl) hl.value = rec.hl;
+    const mm = $('memo'); if (mm.value !== rec.memo) mm.value = rec.memo;
+    const t5 = $('try5'); if (t5.value !== (rec.try5||'')) t5.value = rec.try5 || '';
+    const s = dayStat(curKey);
+    let m = '';
+    if (s.done === s.total) m = '全ブロック達成。今日は完璧です';
+    else if (s.done > 0 && minMet(curKey)) m = '最低ライン達成。今日の連続記録は守れました';
+    $('msg').textContent = m;
+  }
+
+  /* ---------- 北極星 ---------- */
+  (function(){
+    const ul = $('msList');
+    MILESTONES.forEach(([y,t],i) =>
+      ul.appendChild(h('li',{class: i===MILESTONES.length-1 ? 'now' : ''}, h('b',{},y), h('span',{},t))));
+  })();
+
+  /* ---------- 目標 ---------- */
+  function latestBody(field){
+    const ks = Object.keys(meta.reviews).sort();
+    for (let i=ks.length-1; i>=0; i--){
+      const v = parseFloat(meta.reviews[ks[i]][field]);
+      if (!isNaN(v)) return v;
+    }
+    return null;
+  }
+  function goalInfo(g){
+    const t0 = todayDate();
+    const start = parseKey(g.created), due = parseKey(g.due);
+    const left = diffDays(t0, due);
+    let rate = null;
+    if (g.blocks && g.blocks.length){
+      const end = t0 < due ? t0 : due;
+      let possible = 0, done = 0;
+      for (let d = start; d <= end; d = addDays(d,1)){
+        const ids = blocksFor(d).map(b => b.id), r = get(keyOf(d));
+        g.blocks.forEach(id => { if (ids.includes(id)){ possible++; if (r.b[id]) done++; } });
+      }
+      rate = possible ? done/possible : 0;
+    }
+    const span = Math.max(1, diffDays(start, due));
+    const elapsed = Math.min(1, Math.max(0, diffDays(start, t0)/span));
+    const manual = (g.manual!=null) ? g.manual : null;
+    let cur = null, mtext = '', mp = null;
+    if (g.metric){
+      cur = latestBody(g.metric);
+      if (cur != null){
+        const gap = Math.round((cur - g.target)*10)/10;
+        mp = Math.min(1, Math.max(0, (g.base - cur)/(g.base - g.target)));
+        if (g.target2 != null){
+          const g2 = Math.round((cur - g.target2)*10)/10;
+          mtext = g2 <= 0 ? `現在${cur}${g.unit}（${g.target2}${g.unit}に到達）`
+                : gap <= 0 ? `現在${cur}${g.unit}（${g.target}${g.unit}圏内・${g.target2}${g.unit}まであと${g2}）`
+                : `現在${cur}${g.unit}（${g.target}${g.unit}まであと${gap}${g.unit}）`;
+        } else {
+          mtext = gap < 0 ? `現在${cur}${g.unit}（目標クリア）` : `現在${cur}${g.unit}（あと${gap}${g.unit}）`;
+        }
+      }
+    }
+    if (g.auto === 'relation'){
+      const n = meta.reach.filter(c => c.kind!=='exist' && c.stage >= 5).length;
+      mp = Math.min(1, n/3); mtext = `関係成立 ${n}/3社`;
+    }
+    const p = mp!=null ? mp : manual!=null ? manual/100 : rate!=null ? rate : elapsed;
+    return {left, rate, elapsed, manual, p, mtext, cur};
+  }
+  const goalLine = (g, i) => {
+    const when = g.done ? '達成済み' : i.left < 0 ? `期限${-i.left}日超過` : i.left === 0 ? '今日が期限' : `あと${i.left}日`;
+    return when + (i.mtext ? ` ・${i.mtext}` : '') + (i.manual!=null && !g.metric ? ` ・進行度${i.manual}%` : '')
+               + (i.rate!=null ? ` ・実行率${Math.round(i.rate*100)}%` : '');
+  };
+  const sortedGoals = () => meta.goals.slice().sort((a,b) =>
+    (a.done - b.done) || (TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier)) || a.due.localeCompare(b.due));
+
+  /* ---------- いつやる（実行意図） ---------- */
+  let doEditing = null;
+  const isDeadline = g => !g.metric && !g.auto && !g.done;
+  const fmtDo = g => {
+    const d = parseKey(g.doAt);
+    return `${d.getMonth()+1}/${d.getDate()}（${WD[d.getDay()]}）` + (g.doTime ? ` ${g.doTime}` : '');
+  };
+  function doRow(g, rerender){
+    if (!isDeadline(g)) return null;
+    const wrap = h('div',{});
+    if (doEditing === g.id){
+      const di = h('input',{type:'date'}); di.value = g.doAt || keyOf(todayDate()); di.max = g.due;
+      const ti = h('input',{type:'time'}); ti.value = g.doTime || '';
+      const ok = h('button',{class:'on'},'決定');
+      ok.onclick = () => {
+        if (!di.value) return;
+        g.doAt = di.value; g.doTime = ti.value || ''; doEditing = null; saveMeta(); rerender();
+        toast(`${fmtDo(g)} にやると決めました`);
+      };
+      const clr = h('button',{class:'clr'}, g.doAt ? 'やる日を取り消す' : 'やめる');
+      clr.onclick = () => { if (g.doAt){ delete g.doAt; delete g.doTime; saveMeta(); } doEditing = null; rerender(); };
+      wrap.append(h('div',{class:'doEd'}, di, ti, ok, clr));
+      wrap.append(h('div',{class:'doHint'}, `期限は${g.due.replace(/-/g,'/')}。「いつ・どこで」やるかまで決めると実行率が上がります。`));
+      return wrap;
+    }
+    const t0 = todayDate();
+    let txt, cls = 'dv';
+    if (!g.doAt){ txt = 'やる日が未定'; cls += ' miss'; }
+    else {
+      const n = diffDays(t0, parseKey(g.doAt));
+      txt = `やる日 ${fmtDo(g)}` + (n>0 ? ` ・あと${n}日` : n===0 ? ' ・今日' : ` ・${-n}日過ぎた`);
+      if (n < 0) cls += ' miss';
+    }
+    const b = h('button',{class: g.doAt ? '' : 'ask'}, g.doAt ? '変更' : 'いつやる？');
+    b.onclick = () => { doEditing = g.id; rerender(); };
+    wrap.append(h('div',{class:'doRow'}, h('span',{class:cls}, txt), b));
+    return wrap;
+  }
+  function todayDos(){
+    const k = keyOf(todayDate());
+    return meta.goals.filter(g => isDeadline(g) && g.doAt === k)
+      .sort((a,b) => (a.doTime||'99').localeCompare(b.doTime||'99'));
+  }
+  function renderDoToday(){
+    const el = $('doToday'); el.textContent = '';
+    const list = todayDos(); if (!list.length) return;
+    el.append(h('div',{class:'card doCard'},
+      h('div',{class:'lb'},'今日やると決めた日'),
+      list.map(g => {
+        const b = h('button',{style:'flex:none;padding:6px 10px;font-size:12px'},'完了');
+        b.onclick = () => { g.done = true; saveMeta(); renderAll(); toast('決めた日に、やり切りました'); };
+        return h('div',{class:'it'}, h('span',{}, (g.doTime ? h('b',{},g.doTime+'　') : null), g.title), b);
+      })));
+  }
+
+  function renderGoalStrip(){
+    const el = $('gstrip'); el.textContent = '';
+    const active = meta.goals.filter(g => !g.done);
+    // 各階層の中で期限が最も近いもの＋長期は数値目標を優先して計2〜3件
+    const pinned = active.filter(g => g.pin);
+    let shown;
+    if (pinned.length) shown = pinned.filter(g => !g.metric).concat(pinned.filter(g => g.metric));
+    else {
+      const body = active.filter(g => g.metric);
+      const rest = TIER_ORDER.map(t =>
+        active.filter(g => g.tier === t && !g.metric).sort((a,b) => a.due.localeCompare(b.due))[0]).filter(Boolean);
+      shown = body.concat(rest);
+    }
+    if (!shown.length){
+      const b = h('button',{class:'link'}, '＋ 短期・中期・長期の目標を設定する');
+      b.onclick = openGoals; el.appendChild(b); return;
+    }
+    shown.forEach(g => {
+      const i = goalInfo(g);
+      const fill = h('i'); fill.style.width = Math.round(i.p*100)+'%';
+      el.appendChild(h('div',{class:'g'+(i.left<0?' late':'')},
+        h('div',{class:'l1'},
+          h('div',{class:'t'}, h('span',{class:'tag'},TIERS[g.tier]), g.title),
+          h('div',{class:'m'}, (g.metric ? `${i.cur!=null ? i.cur+g.unit : '—'} → ${g.targetLabel || g.target+g.unit} ・` : '') + (i.left<0 ? `期限${-i.left}日超過` : i.left===0 ? '今日' : `あと${i.left}日`))),
+        h('div',{class:'bar'}, fill),
+        doRow(g, renderGoalStrip)));
+    });
+  }
+
+  /* ---------- 100日マップ ---------- */
+  function renderMap(){
+    const m = $('map'); m.textContent = '';
+    const t0 = todayDate();
+    for (let i=0; i<TOTAL; i++){
+      const d = addDays(START, i), k = keyOf(d);
+      let cls = 'c', s = null;
+      if (d > t0) cls += ' fut';
+      else {
+        s = dayStat(k); const a = actTotal(k);
+        cls += a>=5 ? ' s3' : a>=3 ? ' s2' : a>=1 ? ' s1' : ' s0';
+      }
+      if (d.getTime() === t0.getTime()) cls += ' today';
+      const b = h('button',{class:cls,'aria-label':`Day ${i+1}`});
+      b.onclick = () => {
+        const base = `Day ${i+1} ・ ${d.getMonth()+1}/${d.getDate()}（${WD[d.getDay()]}）`;
+        $('cap').textContent = d > t0 ? `${base} ・ これから`
+          : `${base} ・ 営業行動${actTotal(k)} ・ スケジュール${s.done}/${s.total}` + (get(k).f!=null ? ` ・ 集中${FOCUS[get(k).f]}` : '');
+      };
+      m.appendChild(b);
+    }
+  }
+
+  /* ---------- 履歴 ---------- */
+  function renderStats(){
+    const t0 = todayDate();
+    const w = $('week'); w.textContent = '';
+    let sd = 0, st = 0;
+    for (let i=6; i>=0; i--){
+      const d = addDays(t0, -i), k = keyOf(d), s = dayStat(k);
+      if (d < START){
+        w.appendChild(h('div',{class:'d zero'}, h('small',{},`${d.getMonth()+1}/${d.getDate()}(${WD[d.getDay()]})`), h('strong',{},'—'), h('em',{},'開始前')));
+        continue;
+      }
+      sd += s.done; st += s.total;
+      const full = s.done===s.total;
+      const cls = 'd' + (full?' full':(s.done>0 && minMet(k))?' min':'') + (s.done===0?' zero':'') + (i===0?' today':'');
+      w.appendChild(h('div',{class:cls},
+        h('small',{},`${d.getMonth()+1}/${d.getDate()}(${WD[d.getDay()]})`),
+        h('strong',{},`${Math.round(s.done/s.total*100)}%`),
+        h('em',{},`${s.done}/${s.total}`)));
+    }
+    let streak = 0, d = t0;
+    const ok = dd => count(keyOf(dd)) > 0 && minMet(keyOf(dd));
+    if (!ok(d)) d = addDays(d,-1);
+    while (ok(d) && streak < 1000){ streak++; d = addDays(d,-1); }
+    const s0 = dayStat(keyOf(t0)), p0 = Math.round(s0.done/s0.total*100), pw = st ? Math.round(sd/st*100) : 0;
+    $('statToday').querySelector('b').textContent = `${p0}%`;
+    $('statToday').classList.toggle('glow', p0===100);
+    $('statWeek').querySelector('b').textContent = `${pw}%`;
+    $('statWeek').classList.toggle('glow', pw>=80);
+    $('statStreak').querySelector('b').textContent = `🔥${streak}日`;
+    $('statStreak').classList.toggle('glow', streak>0);
+  }
+
+  function renderHeader(){
+    const today = todayDate();
+    $('date').textContent = `${today.getFullYear()}/${pad(today.getMonth()+1)}/${pad(today.getDate())}（${WD[today.getDay()]}）`;
+    const n = diffDays(START, today) + 1;
+    const day = $('day');
+    day.textContent = '';
+    if (n < 1){ day.textContent = `開始まであと${1-n}日`; $('prog').style.width = '0'; }
+    else { day.append('Day ', h('b',{},String(n)), ` / ${TOTAL}`); $('prog').style.width = Math.min(100, n/TOTAL*100)+'%'; }
+    const dow = today.getDay();
+    $('rdot').style.display = ((dow===0 || dow===6) && !(meta.reviews[weekKey(today)]||{}).saved) ? '' : 'none';
+  }
+
+  function renderAll(){ renderHeader(); renderGoalStrip(); renderDoToday(); renderSales(); renderActs(); renderNextDeal(); renderReach(); renderBrand(); renderPillars(); paint(); renderMap(); renderStats(); }
+
+  /* ---------- 営業：共通 ---------- */
+  const SALES_T = [['tatami','畳',292],['product','イ草プロダクト',100],['agri','農業',17],['video','動画編集',8]];
+  const ROUTES = ['Instagram','Googleマップ','ホームページ','ブログ','YouTube','TikTok','紹介','その他'];
+  const TIER_N = ['S','A','B','C','D'];
+  const TIER_DESC = ['年200万以上','年100万以上','年50万以上','年10万以上','年10万未満'];
+  const TIER_DAYS2 = [14,21,30,45,90];
+  const FITS = ['自然素材','文化を大事に','丁寧な暮らし','循環型'];
+  const SHOP_ST = ['未営業','検討中','契約中','再アタック','様子見'];
+  const ym = d => d.getFullYear()+'-'+pad(d.getMonth()+1);
+  const inWeek = k => k >= weekKey(todayDate()) && k <= keyOf(addDays(parseKey(weekKey(todayDate())),6));
+  const inMonth = k => k.slice(0,7) === ym(todayDate());
+  const touchesOn = k => meta.rlog.filter(e => e.type==='touch' && e.d===k).length;
+  const actOf = k => Object.assign({post:0, viral:0, review:0}, get(k).act || {});
+  const actTotal = k => { const a = actOf(k); return a.post + a.viral + a.review + touchesOn(k); };
+  function weekAct(){
+    const w = {post:0, viral:0, review:0, touch:0};
+    const mon = parseKey(weekKey(todayDate()));
+    for (let i=0;i<7;i++){ const k = keyOf(addDays(mon,i)); const a = actOf(k);
+      w.post += a.post; w.viral += a.viral; w.review += a.review; w.touch += touchesOn(k); }
+    return w;
+  }
+
+  /* ---------- 来期5,000万円 ---------- */
+  function renderSales(){
+    const el = $('sales'); el.textContent = '';
+    const m = meta.sales[ym(todayDate())] || {};
+    const tot = SALES_T.reduce((t,[k]) => t + (+m[k]||0), 0), goal = SALES_T.reduce((t,x) => t + x[2], 0);
+    const fill = h('i'); fill.style.width = Math.min(100, tot/goal*100)+'%';
+    el.append(h('div',{class:'tot'}, h('b',{}, `${tot}万`), h('span',{}, `今月 / 目標 月${goal}万（年5,000万）`)),
+      h('div',{class:'bar'}, fill));
+    SALES_T.forEach(([k,label,t]) => {
+      const v = +m[k]||0, f = h('i'); f.style.width = Math.min(100, v/t*100)+'%';
+      el.append(h('div',{class:'prow'}, h('span',{},label), h('div',{class:'bar'}, f), h('span',{}, `${v}/${t}万`)));
+    });
+    el.append(h('div',{class:'hint'}, tot ? 'タップで今月の売上を更新' : 'タップして今月の売上（万円）を入れる'));
+    $('salesSub').textContent = tot >= goal ? '今月 目標到達' : `あと${goal-tot}万`;
+  }
+  function openSales(){
+    openSheet('sales');
+    sheet.textContent = ''; sheet.append(head('今月の売上'));
+    const key = ym(todayDate()), m = meta.sales[key] = meta.sales[key] || {};
+    sheet.append(h('div',{class:'sub'}, `${key.replace('-','年')}月の売上を、柱ごとに万円で入れます。月の途中でも、分かった時点の数字で大丈夫です。`));
+    SALES_T.forEach(([k,label,t]) => {
+      const inp = h('input',{type:'text',inputmode:'decimal',placeholder:'0',maxlength:'6'}); inp.value = m[k] || '';
+      inp.addEventListener('input', e => { m[k] = e.target.value.trim(); saveMeta(); });
+      sheet.append(h('div',{class:'sub',style:'margin:12px 2px 4px'}, `${label}（目標 月${t}万）`),
+        h('div',{class:'card row'}, inp, h('span',{class:'sub',style:'margin:0'},'万円')));
+    });
+  }
+  $('sales').onclick = openSales;
+
+  /* ---------- 今日の営業アクション ---------- */
+  const PLATS = ['Instagram','YouTube','TikTok'];
+  function setAct(field, d, plat){
+    const a = Object.assign({post:0, viral:0, review:0, plog:[]}, rec.act || {});
+    a.plog = a.plog || [];
+    if (field==='post'){
+      if (d>0){ a.plog.push(plat || 'その他'); a.post++; }
+      else if (a.post>0){ a.plog.pop(); a.post--; }
+    } else if (field==='review'){
+      a.tlog = a.tlog || [];
+      if (d>0){ a.tlog.push(plat || ''); a.review++; }
+      else if (a.review>0){ a.tlog.pop(); a.review--; }
+    } else a[field] = Math.max(0, a[field] + d);
+    rec.act = a; store[curKey] = rec; saveStore();
+  }
+  function platCount(){
+    const c = {}; const mon = parseKey(weekKey(todayDate()));
+    for (let i=0;i<7;i++){ (actOf(keyOf(addDays(mon,i))).plog||[]).forEach(p => c[p] = (c[p]||0)+1); }
+    return c;
+  }
+  function openPost(){
+    openSheet('post'); sheet.textContent = ''; sheet.append(head('発信を記録'));
+    sheet.append(h('div',{class:'sub'}, 'どこに投稿したかをタップ。'));
+    const g = h('div',{class:'routes',style:'grid-template-columns:1fr'});
+    PLATS.forEach(pf => { const b = h('button',{}, pf); b.onclick = () => { setAct('post', 1, pf); toast(`発信＋1（${pf}）`); closeSheet(); }; g.append(b); });
+    sheet.append(g);
+    const pc = platCount();
+    sheet.append(h('div',{class:'sub',style:'margin-top:14px'}, '今週：' + PLATS.map(pf => `${pf} ${pc[pf]||0}本`).join(' ・ ')));
+  }
+  function openThanks(){
+    openSheet('thanks'); sheet.textContent = ''; sheet.append(head('Thank You Letter'));
+    sheet.append(h('div',{class:'sub'}, '施工後のお客さんへのお礼。どなたに書いたかを残します。'));
+    const nm = h('input',{type:'text',placeholder:'お名前（例：田川市 〇〇様 ・ 表替え6畳）',maxlength:'60',autocomplete:'off'});
+    sheet.append(h('div',{class:'card'}, nm));
+    const ok = h('button',{class:'add on'}, '書いた＋1');
+    ok.onclick = () => { setAct('review', 1, nm.value.trim()); toast('Thank You Letter ＋1'); closeSheet(); };
+    sheet.append(ok);
+    const mon = parseKey(weekKey(todayDate())), names = [];
+    for (let i=0;i<7;i++){ const k = keyOf(addDays(mon,i)); (actOf(k).tlog||[]).forEach(n => names.push(`${+k.slice(5,7)}/${+k.slice(8)} ${n || '（名前なし）'}`)); }
+    sheet.append(h('h2',{},`今週書いた（${names.length}通）`));
+    if (!names.length) sheet.append(h('div',{class:'sub'}, 'まだありません。'));
+    const ul = h('ul',{class:'hits'}); names.forEach(n => ul.append(h('li',{}, n))); sheet.append(ul);
+  }
+  function openTouch(){
+    openSheet('touch'); sheet.textContent = ''; sheet.append(head('接点を記録'));
+    sheet.append(h('div',{class:'sub'}, 'どの建築会社と接点を持ったかをタップ。新しい会社は、下に名前を書いて追加できます。'));
+    const q = h('input',{type:'text',placeholder:'会社名で探す',autocomplete:'off'});
+    sheet.append(h('div',{class:'card'}, q));
+    const list = h('div',{class:'olist',style:'margin-top:10px'});
+    const tc = pickToday();
+    const all = meta.reach.slice().sort((a,b) =>
+      (a===tc?-1:b===tc?1:0) || (a.kind==='exist'?0:1)-(b.kind==='exist'?0:1) || (a.tier??9)-(b.tier??9) || a.name.localeCompare(b.name,'ja'));
+    const draw = () => {
+      list.textContent = '';
+      const w = q.value.trim().replace(/\s+/g,'');
+      all.filter(c => !w || c.name.replace(/\s+/g,'').includes(w)).slice(0, w ? 50 : 15).forEach(c => {
+        const sub = c===tc ? '今日の1社' : c.kind==='exist' ? `${TIER_N[c.tier??4]}ランク` : c.kind==='shop' ? `SHOP ・ ${SHOP_ST[c.sst??0]}` : `新規 ・ 合う度${(c.checks||[]).filter(Boolean).length}/4`;
+        const b = h('button',{}, h('span',{}, c.name), h('small',{}, sub));
+        b.onclick = () => { touchCompany(c); toast(`${c.name} に接点＋1`); checkAch(); closeSheet(); };
+        list.append(b);
+      });
+      if (!w) list.append(h('div',{class:'sub'}, '15社だけ表示中。会社名で探すと全社から選べます。'));
+    };
+    q.addEventListener('input', draw); draw();
+    sheet.append(list);
+    sheet.append(h('h2',{},'新しい会社と接点を持った'));
+    const nm = h('input',{type:'text',placeholder:'会社名（新規の候補として登録されます）',maxlength:'40'});
+    sheet.append(h('div',{class:'card'}, nm));
+    const ad = h('button',{class:'add on'}, '登録して接点＋1');
+    ad.onclick = () => {
+      const n = nm.value.trim(); if (!n){ ad.textContent = '会社名を入力してください'; return; }
+      const c = {id:Date.now(), name:n, kind:'fit', checks:[false,false,false,false], stage:0, touches:0, orders:0, replied:false, memo:'', created:keyOf(new Date())};
+      meta.reach.push(c); meta.rlog.push({d:keyOf(new Date()), type:'list', co:c.id});
+      touchCompany(c); toast(`${n} を登録して接点＋1`); checkAch(); closeSheet();
+    };
+    sheet.append(ad);
+  }
+  function renderActs(){
+    const el = $('acts'); el.textContent = '';
+    const a = actOf(curKey), w = weekAct(), wt = meta.wt, td = touchesOn(curKey);
+    const pc = platCount();
+    const plSub = (pc.Instagram||pc.YouTube||pc.TikTok) ? `今週 IG${pc.Instagram||0}・YT${pc.YouTube||0}・TT${pc.TikTok||0}` : 'Instagram・YouTube・TikTok';
+    const defs = [
+      ['post','発信', plSub, a.post, w.post, wt.post],
+      ['viral','伸ばす投稿','新しい型・コラボ・話題', a.viral, w.viral, wt.viral],
+      ['review','Thank You Letter','施工後のお客さんへ', a.review, w.review, wt.review],
+      ['touch','接点','どの建築会社か選ぶ', td, w.touch, wt.touch]];
+    defs.forEach(([k,label,sub,today,week,target]) => {
+      const main = h('button',{class:'main'}, h('b',{},label), h('small',{},sub),
+        h('span',{class:'n'}, String(today), h('i',{}, `今週 ${week}/${target}`)));
+      main.onclick = () => {
+        if (k==='touch'){ openTouch(); return; }
+        if (k==='post'){ openPost(); return; }
+        if (k==='review'){ openThanks(); return; }
+        setAct(k, 1); toast(`${label} ＋1`);
+        renderAll();
+      };
+      const minus = h('button',{class:'minus','aria-label':'1つ戻す'},'−');
+      minus.onclick = () => {
+        if (k==='touch'){ undoTouch(); } else setAct(k, -1);
+        renderAll();
+      };
+      el.append(h('div',{class:'card act'+(week>=target?' hit':'')}, main, today>0 ? minus : null));
+    });
+    const tot = w.post + w.viral + w.review + w.touch, tt = wt.post + wt.viral + wt.review + wt.touch;
+    $('actSub').textContent = `今週 ${tot}/${tt}`;
+  }
+  function undoTouch(){
+    const k = keyOf(new Date());
+    for (let i = meta.rlog.length-1; i>=0; i--){
+      const e = meta.rlog[i];
+      if (e.type==='touch' && e.d===k){
+        meta.rlog.splice(i,1);
+        const c = meta.reach.find(x => x.id===e.co); if (c && c.touches) c.touches--;
+        saveMeta(); return;
+      }
+    }
+  }
+
+  /* ---------- ブランドメーター ---------- */
+  const IG = {start:8075, from:'2026-11-25', target:10000, due:'2026-12-31'};
+  const YT = {start:971, from:'2026-11-25', target:1000, due:'2026-12-31'};
+  function latestBrand(f){ for (let i=meta.brand.length-1;i>=0;i--){ const v = meta.brand[i][f]; if (v!=null && v!=='') return {v:+v, d:meta.brand[i].d}; } return null; }
+  function paceCard(label, cfg, f){
+    const L = latestBrand(f), cur = L ? L.v : cfg.start;
+    const span = diffDays(parseKey(cfg.from), parseKey(cfg.due));
+    const at = L ? Math.min(span, Math.max(0, diffDays(parseKey(cfg.from), parseKey(L.d)))) : 0;
+    const need = Math.round(cfg.start + (cfg.target-cfg.start)*at/span);
+    const left = Math.max(0, diffDays(todayDate(), parseKey(cfg.due)));
+    const fill = h('i'); fill.style.width = Math.min(100, Math.max(0,(cur-cfg.start)/(cfg.target-cfg.start))*100)+'%';
+    let st, cls = 'st';
+    if (cur >= cfg.target){ st = '目標到達'; cls += ' ahead'; }
+    else {
+      const perDay = left ? Math.ceil((cfg.target-cur)/left) : (cfg.target-cur);
+      const diff = cur - need;
+      st = `あと${cfg.target-cur}人 ・ 1日${perDay}人ペース ・ 必要線より${diff>=0?'+':''}${diff}`;
+      cls += diff >= 0 ? ' ahead' : ' behind';
+    }
+    return h('div',{class:'card bm'},
+      h('div',{class:'l1'}, h('b',{},label), h('span',{class:'v'}, cur.toLocaleString(), h('i',{}, ` / ${cfg.target.toLocaleString()}`))),
+      h('div',{class:'bar'}, fill),
+      h('div',{class:cls}, st + `（${cfg.due.slice(5).replace('-','/')}まで）`));
+  }
+  function renderBrand(){
+    const el = $('brand'); el.textContent = '';
+    el.append(paceCard('Instagram', IG, 'ig'), paceCard('YouTube', YT, 'yt'));
+    const growCard = (label, f, unit, empty) => {
+      const L = latestBrand(f);
+      const prev = L ? meta.brand.filter(x => x.d < L.d && x[f]!=null && x[f]!=='').pop() : null;
+      const diff = (L && prev) ? L.v - (+prev[f]) : null;
+      return h('div',{class:'card bm'},
+        h('div',{class:'l1'}, h('b',{},label), h('span',{class:'v'}, L ? L.v.toLocaleString() : '—', h('i',{}, ' '+unit))),
+        h('div',{class:'st'+(diff>0?' ahead':'')}, L ? (diff!=null ? `前回から ${diff>=0?'+':''}${diff}` : '次の更新から増え方が出ます') : empty));
+    };
+    el.append(growCard('TikTok', 'tt', '人', 'フォロワー数を入れると、増え方が出ます'));
+    meta.blogs = meta.blogs || [];
+    const mk3 = [2,1,0].map(i => { const d = new Date(todayDate().getFullYear(), todayDate().getMonth()-i, 1); return ym(d); });
+    const wrote = m => meta.blogs.filter(d => d.slice(0,7)===m).length;
+    const came = m => meta.inq.filter(x => x.r==='ブログ' && x.d.slice(0,7)===m).length;
+    const tbl = h('div',{class:'btbl'}, h('span',{},''), h('span',{},'書いた'), h('span',{},'ブログから'));
+    mk3.forEach(m => tbl.append(h('span',{}, `${+m.slice(5)}月`), h('b',{}, `${wrote(m)}本`), h('b',{}, `${came(m)}件`)));
+    const bp = h('button',{class:'on'}, 'ブログを書いた＋1');
+    bp.onclick = () => { meta.blogs.push(keyOf(new Date())); saveMeta(); toast('ブログ＋1。積み上げが問い合わせになります'); renderAll(); };
+    const bAll = meta.blogs.length, cAll = meta.inq.filter(x => x.r==='ブログ').length;
+    el.append(h('div',{class:'card bm'},
+      h('div',{class:'l1'}, h('b',{},'ブログ'), h('span',{class:'v'}, String(wrote(mk3[2])), h('i',{}, ' 本 今月書いた'))),
+      tbl,
+      h('div',{class:'st'+(cAll?' ahead':'')}, bAll ? `記録してから ${bAll}本 → ブログから ${cAll}件。書いた本数と問い合わせが一緒に伸びれば成功です` : '書いたら＋1。書いた本数と、ブログからの問い合わせを月ごとに並べます'),
+      h('div',{style:'margin-top:8px'}, bp)));
+    const gr = latestBrand('gr');
+    const mon = meta.brand.filter(x => x.d < ym(todayDate())+'-01' && x.gr!=null && x.gr!=='').pop();
+    el.append(h('div',{class:'card bm'},
+      h('div',{class:'l1'}, h('b',{},'Googleの口コミ', latestBrand('gs') ? h('span',{style:'color:#e6c46a;font-weight:400;font-size:13px;margin-left:8px'}, `★${latestBrand('gs').v.toFixed(1)}`) : null), h('span',{class:'v'}, gr ? String(gr.v) : '—', h('i',{}, ' 件'))),
+      h('div',{class:'st'+(gr && mon && gr.v>+mon.gr?' ahead':'')}, gr ? (mon ? `今月 +${gr.v - (+mon.gr)}件` : 'Thank You Letterの数と一緒に伸ばす') : '件数を入れると、月ごとの増え方が出ます')));
+    const wk = weekKey(todayDate()), now = new Date();
+    const doneW = meta.brand.some(x => x.d >= wk);
+    const monday7 = parseKey(wk); monday7.setHours(7,0,0,0);
+    const due = !doneW && now >= monday7;
+    const up = h('button',{class:'bupd'+(due?' due':'')+(doneW?' done':'')},
+      doneW ? '今週の数字は更新済み ✓（毎週月曜 7:00）' : due ? '月曜7時の更新がまだです。今やる' : '数字を更新（毎週月曜 7:00）');
+    up.onclick = openBrand;
+    el.append(up);
+  }
+  function openBrand(){
+    openSheet('brand'); sheet.textContent = ''; sheet.append(head('ブランドの数字'));
+    sheet.append(h('div',{class:'sub'}, '毎週月曜の朝7時に、この画面で数字を入れます。決まった時間にやると、続けやすくなります。'));
+    const k = keyOf(todayDate());
+    let e = meta.brand.find(x => x.d===k);
+    const F = [['ig','Instagram フォロワー'],['yt','YouTube 登録者'],['tt','TikTok フォロワー'],['gr','Google 口コミ件数'],['gs','Google 星の平均（例：4.9）']];
+    const vals = {}; F.forEach(([f]) => vals[f] = (latestBrand(f)||{}).v ?? '');
+    const ins = {};
+    F.forEach(([f,label]) => {
+      const inp = h('input',{type:'text',inputmode:'numeric',maxlength:'7'}); inp.value = e && e[f]!=null ? e[f] : vals[f];
+      ins[f] = inp;
+      sheet.append(h('div',{class:'sub',style:'margin:12px 2px 4px'}, label), h('div',{class:'card row'}, inp));
+    });
+    const sv = h('button',{class:'add on'}, '今日の数字として保存');
+    sv.onclick = () => {
+      if (!e){ e = {d:k}; meta.brand.push(e); }
+      F.forEach(([f]) => { const v = ins[f].value.trim(); e[f] = v==='' ? null : +v; });
+      meta.brand.sort((a,b) => a.d.localeCompare(b.d)); saveMeta(); toast('保存しました'); closeSheet();
+    };
+    sheet.append(sv);
+    sheet.append(h('h2',{},'伸びた投稿メモ'));
+    sheet.append(h('div',{class:'sub'}, 'フォロワーが大きく増えた回は、何が効いたかを一言残して、次に再現します。'));
+    const hi = h('input',{type:'text',placeholder:'例：張り替え前後のリール。冒頭1秒で香りの話',maxlength:'100'});
+    const ad = h('button',{class:'add'}, 'メモを追加');
+    ad.onclick = () => { const v = hi.value.trim(); if (!v) return; meta.hits.unshift({d:k, t:v}); saveMeta(); openBrand(); };
+    sheet.append(h('div',{class:'card'}, hi), ad);
+    const ul = h('ul',{class:'hits'});
+    meta.hits.forEach(x => ul.append(h('li',{}, `${x.d.slice(5).replace('-','/')}　${x.t}`)));
+    sheet.append(ul);
+  }
+
+  /* ---------- 4つの柱 ---------- */
+  function renderPillars(){
+    const el = $('pillars'); el.textContent = '';
+    const inqM = meta.inq.filter(x => inMonth(x.d));
+    const byR = {}; inqM.forEach(x => byR[x.r] = (byR[x.r]||0)+1);
+    const top = Object.entries(byR).sort((a,b) => b[1]-a[1]).slice(0,2).map(([r,n]) => `${r}${n}`).join('・');
+    const ordM = meta.orders.filter(x => inMonth(x.d)).length;
+    const exist = meta.reach.filter(c => c.kind==='exist');
+    const quiet = exist.filter(c => c.tier>=3).length;
+    const newC = meta.reach.filter(c => c.kind!=='exist' && c.kind!=='shop');
+    const fit3 = newC.filter(c => (c.checks||[]).filter(Boolean).length >= 3).length;
+    const newT = meta.rlog.filter(e => e.type==='touch' && inMonth(e.d) && newC.some(c => c.id===e.co)).length;
+    const pg = meta.goals.filter(g => !g.done && /試作|縫い手|販売ページ/.test(g.title)).sort((a,b) => a.due.localeCompare(b.due))[0];
+    const card = (hd, big, unit, ds, btn) => h('div',{class:'card pl'}, h('div',{class:'hd'},hd), h('div',{class:'big'}, big, h('i',{},unit)), h('div',{class:'ds'}, ds), btn);
+    const b1 = h('button',{class:'on'}, '問い合わせ＋1'); b1.onclick = openInq;
+    const b2 = h('button',{class:'on'}, '発注＋1'); b2.onclick = openOrder;
+    const shops = meta.reach.filter(c => c.kind==='shop');
+    const shopOn = shops.filter(c => c.sst===2).length;
+    const shopT = meta.rlog.filter(e => e.type==='touch' && inMonth(e.d) && shops.some(c => c.id===e.co)).length;
+    const b3 = h('div',{style:'display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:auto'});
+    const b3a = h('button',{style:'margin:0;font-size:12px'}, '建築会社'); b3a.onclick = () => { meta.rtab = 'new'; openReach(); };
+    const b3b = h('button',{style:'margin:0;font-size:12px'}, 'SHOP'); b3b.onclick = () => { meta.rtab = 'shop'; openReach(); };
+    b3.append(b3a, b3b);
+    const b4 = h('button',{}, '目標を見る'); b4.onclick = openGoals;
+    el.append(
+      card('BtoC', String(inqM.length), '件の問い合わせ', top || '経路を記録すると、効いている発信が分かります', b1),
+      card('既存の建築会社', String(ordM), '件の発注', `${exist.length}社 ・ S${exist.filter(c=>c.tier===0).length}・A${exist.filter(c=>c.tier===1).length}・B${exist.filter(c=>c.tier===2).length}・C/D ${quiet}`, b2),
+      card('新規開拓', String(newT + shopT), '件の接点', `建築会社 ${newC.length}社（合う度3以上 ${fit3}） ・ SHOP 契約中 ${shopOn}/${shops.length}`, b3),
+      card('イ草プロダクト', pg ? String(Math.max(0, diffDays(todayDate(), parseKey(pg.due)))) : '—', pg ? '日' : '', pg ? `${pg.title}まで` : '次の目標を設定', b4));
+  }
+  function openInq(){
+    openSheet('inq'); sheet.textContent = ''; sheet.append(head('問い合わせを記録'));
+    sheet.append(h('div',{class:'sub'}, '問い合わせを受けたら「何を見てご連絡くださいましたか？」と一言聞いて、答えを1タップ。経路が溜まると、どの発信が売上につながっているかが見えます。'));
+    const g = h('div',{class:'routes'});
+    ROUTES.forEach(r => { const b = h('button',{}, r); b.onclick = () => { meta.inq.push({d:keyOf(new Date()), r}); saveMeta(); toast(`問い合わせ＋1（${r}）`); closeSheet(); }; g.append(b); });
+    sheet.append(g);
+    const k = keyOf(new Date()), last = meta.inq.length ? meta.inq[meta.inq.length-1] : null;
+    if (last && last.d===k){
+      const u = h('button',{class:'add'}, `今日の最後の記録（${last.r}）を取り消す`);
+      u.onclick = () => { meta.inq.pop(); saveMeta(); openInq(); }; sheet.append(u);
+    }
+  }
+  function openOrder(){
+    openSheet('order'); sheet.textContent = ''; sheet.append(head('発注を記録'));
+    sheet.append(h('div',{class:'sub'}, 'どの会社から発注が来たかをタップ。最後の発注日が残り、掘り起こしの順番に使われます。'));
+    const ex = meta.reach.filter(c => c.kind==='exist').sort((a,b) => (a.tier??4)-(b.tier??4) || a.name.localeCompare(b.name,'ja'));
+    if (!ex.length) sheet.append(h('div',{class:'sub'}, '既存の取引先がまだありません。リーチ帳から登録してください。'));
+    const ol = h('div',{class:'olist'});
+    ex.forEach(c => {
+      const b = h('button',{}, h('span',{}, c.name), h('small',{}, `${TIER_N[c.tier??4]}ランク` + (c.lastOrder ? ` ・ ${diffDays(parseKey(c.lastOrder), todayDate())}日前` : '')));
+      b.onclick = () => { addOrder(c); toast(`${c.name} 発注＋1`); closeSheet(); };
+      ol.append(b);
+    });
+    sheet.append(ol);
+  }
+  function addOrder(c){
+    const k = keyOf(new Date());
+    c.orders = (c.orders||0)+1; c.lastOrder = k; c.last = k;
+    meta.orders.push({d:k, co:c.id}); saveMeta();
+  }
+
+  /* ---------- リーチ帳 ---------- */
+  const STAGES = ['リスト','調べた','接点','返信','商談','成約'];
+  const KINDS = {exist:'既存', fit:'理念が合う', warm:'再接触', intro:'紹介'};
+  function reachStats(){
+    const newC = meta.reach.filter(c => c.kind!=='exist' && c.kind!=='shop');
+    const touches = meta.rlog.filter(e => e.type==='touch');
+    return {
+      list: newC.length,
+      touchesAll: touches.length,
+      touchesWeek: touches.filter(e => inWeek(e.d)).length,
+      replies: newC.filter(c => c.stage>=3).length,
+      relations: newC.filter(c => c.stage>=5).length
+    };
+  }
+  function checkAch(silent){
+    const s = reachStats();
+    const A = [
+      ['touch1', s.touchesAll>=1, '最初の接点。ここが一番大きな一歩です'],
+      ['reply1', s.replies>=1, '返信がきました。波長が届いています'],
+      ['touch10', s.touchesAll>=10, '接点10回。積み上がっています'],
+      ['rel1', s.relations>=1, '関係成立。1社目です'],
+      ['touch30', s.touchesAll>=30, '接点30回。仕組みになってきました']];
+    for (const [k,ok,msg] of A){
+      if (ok && !meta.ach[k]){ meta.ach[k] = true; saveMeta(); if (!silent){ toast(msg); return; } }
+    }
+  }
+  function overdue(c){
+    const ref = c.last || c.created || '2026-01-01';
+    const since = diffDays(parseKey(ref), todayDate());
+    const cad = c.kind==='exist' ? TIER_DAYS2[c.tier??4] : 14;
+    return (c.last ? since : since + 30) - cad;
+  }
+  function pickToday(){
+    const k = keyOf(new Date());
+    const cand = meta.reach.filter(c => c.last !== k && (c.kind==='exist' || c.stage < 5));
+    if (!cand.length) return null;
+    return cand.sort((a,b) => overdue(b) - overdue(a) || (a.kind==='exist'?0:1) - (b.kind==='exist'?0:1) || (a.tier??9) - (b.tier??9) || a.id - b.id)[0];
+  }
+  function renderReach(){ renderToday(); }
+  function touchCompany(c){
+    c.touches = (c.touches||0) + 1; if (c.kind!=='exist' && c.stage < 2) c.stage = 2; c.last = keyOf(new Date());
+    meta.rlog.push({d:keyOf(new Date()), type:'touch', co:c.id}); saveMeta();
+  }
+  function renderToday(){
+    const el = $('rtoday'); el.textContent = '';
+    const c = pickToday(); if (!c) return;
+    const t = keyOf(new Date());
+    const doneToday = touchesOn(t) > 0;
+    const when = c.kind==='shop' ? `パートナーSHOP ・ ${SHOP_ST[c.sst??0]}` + (c.last ? ` ・ 最後の接点 ${diffDays(parseKey(c.last), todayDate())}日前` : '')
+      : c.kind==='exist'
+      ? `${TIER_N[c.tier??4]}ランク ・ ` + (c.lastOrder ? `最後の発注 ${diffDays(parseKey(c.lastOrder), todayDate())}日前` : '発注の記録なし')
+      : `新規（合う度${(c.checks||[]).filter(Boolean).length}/4） ・ ` + (!c.last ? 'まだ接点なし' : `最後の接点 ${diffDays(parseKey(c.last), todayDate())}日前`);
+    const go = h('button',{class:'on'}, '接点＋1');
+    go.onclick = () => { touchCompany(c); renderAll(); checkAch(); };
+    const op = h('button',{}, '開く'); op.onclick = () => { meta.rtab = c.kind==='exist' ? 'exist' : c.kind==='shop' ? 'shop' : 'new'; openReach(); };
+    el.append(h('div',{class:'card rtoday',style:'margin-top:8px'},
+      h('div',{class:'lb'}, doneToday ? '今日の接点 ✓　次の1社' : '今日の1社'),
+      h('div',{class:'nm'}, c.name),
+      h('div',{class:'sb'}, [when, c.memo ? ` ／ ${c.memo}` : ''].join('')),
+      h('div',{class:'ac'}, go, op)));
+  }
+  const rform = {name:'', kind:'exist'};
+  function openReach(){ openSheet('reach'); buildReach(); }
+  function buildReach(){
+    sheet.textContent = '';
+    sheet.append(head('リーチ帳'));
+    const tab = meta.rtab || 'exist';
+    const tb = h('div',{class:'rtab'});
+    [['exist','既存の取引先'],['new','新規の建築会社'],['shop','パートナーSHOP']].forEach(([k,l]) => {
+      const b = h('button',{class: tab===k ? 'on' : ''}, l); b.onclick = () => { meta.rtab = k; saveMeta(); buildReach(); }; tb.append(b);
+    });
+    sheet.append(tb);
+
+    const memoIn = c => { const m = h('input',{type:'text',placeholder: c.kind==='exist' ? '最近の様子・次の一手' : '共鳴した点・次の一手',maxlength:'100'});
+      m.value = c.memo || ''; m.addEventListener('input', e => { c.memo = e.target.value; saveMeta(); }); return m; };
+    const delBtn = c => { const d = h('button',{class:'del'},'削除');
+      d.onclick = () => { if (d.dataset.sure){ meta.reach = meta.reach.filter(x => x.id!==c.id); saveMeta(); buildReach(); } else { d.dataset.sure='1'; d.textContent='本当に？'; } }; return d; };
+    const siteLink = c => (c.url && /^https?:\/\//.test(c.url)) ? h('a',{class:'link',href:c.url,target:'_blank',rel:'noopener',style:'display:inline-block;text-decoration:none'}, '公式サイトを開く ↗') : null;
+
+    if (tab === 'shop'){
+      const shops = meta.reach.filter(c => c.kind==='shop');
+      sheet.append(h('div',{class:'sub',style:'margin-top:10px'}, `イ草プロダクトを委託で置いてもらうお店です。契約中 ${shops.filter(c => c.sst===2).length}店。`));
+      SHOP_ST.forEach((sn, si) => {
+        const list = shops.filter(c => (c.sst??0)===si);
+        if (!list.length) return;
+        sheet.append(h('div',{class:'grp'}, `${sn}（${list.length}）`));
+        list.forEach(c => {
+          const st = h('div',{class:'tier'});
+          SHOP_ST.forEach((n,i) => { const b = h('button',{class:(c.sst??0)===i?'on':''}, n); b.onclick = () => { c.sst = i; saveMeta(); buildReach(); }; st.append(b); });
+          const tc = h('button',{class:'on'}, `接点＋1（${c.touches||0}）`); tc.onclick = () => { touchCompany(c); checkAch(); buildReach(); };
+          sheet.append(h('div',{class:'card rc2'},
+            h('div',{class:'hd'}, h('b',{},c.name)),
+            c.info ? h('div',{class:'sub',style:'margin:6px 0 0'}, c.info) : null,
+            st, h('div',{class:'acts'}, tc, delBtn(c)), karteBtn(c), memoIn(c)));
+        });
+      });
+    } else if (tab === 'exist'){
+      sheet.append(h('div',{class:'sub',style:'margin-top:10px'}, '年間売上でランク分けします。S：200万以上／A：100万以上／B：50万以上／C：10万以上／D：10万未満。連絡の目安はS 2週間・A 3週間・B 1か月・C 1か月半・D 3か月。目安を過ぎた会社から「今日の1社」に出ます。住所・電話はスプレッドシートで確認してください。'));
+      const ex = meta.reach.filter(c => c.kind==='exist');
+      TIER_N.forEach((tn, ti) => {
+        const list = ex.filter(c => (c.tier??4)===ti).sort((a,b) => a.name.localeCompare(b.name,'ja'));
+        if (!list.length) return;
+        sheet.append(h('div',{class:'grp'}, `${tn}ランク ・ ${TIER_DESC[ti]}（${list.length}社）`));
+        list.forEach(c => {
+          const tier = h('div',{class:'tier'});
+          TIER_N.forEach((n,i) => { const b = h('button',{class:(c.tier??4)===i?'on':''}, n); b.onclick = () => { c.tier = i; saveMeta(); buildReach(); }; tier.append(b); });
+          const od = h('button',{class:'on'}, `発注＋1（${c.orders||0}）`); od.onclick = () => { addOrder(c); toast(`${c.name} 発注＋1`); buildReach(); };
+          const tc = h('button',{}, `連絡＋1（${c.touches||0}）`); tc.onclick = () => { touchCompany(c); checkAch(); buildReach(); };
+          sheet.append(h('div',{class:'card rc2'},
+            h('div',{class:'hd'}, h('b',{},c.name)),
+            h('div',{class:'sub',style:'margin:6px 0 0'}, [c.lastOrder ? `最後の発注 ${diffDays(parseKey(c.lastOrder), todayDate())}日前（${c.lastOrder.slice(5).replace('-','/')}）` : '発注の記録なし', `発注 ${c.orders||0}回`, c.last ? `最後の連絡 ${diffDays(parseKey(c.last), todayDate())}日前` : ''].filter(Boolean).join(' ／ ')),
+            siteLink(c), tier, h('div',{class:'acts'}, od, tc, delBtn(c)), karteBtn(c), memoIn(c)));
+        });
+      });
+    } else {
+      sheet.append(h('div',{class:'sub',style:'margin-top:10px'}, '理念が合うかは4つのサインで見ます。3つ以上なら、狙う価値がある会社です。和室があるだけでは合うとは限りません。'));
+      const newC = meta.reach.filter(c => c.kind!=='exist' && c.kind!=='shop')
+        .sort((a,b) => (b.checks||[]).filter(Boolean).length - (a.checks||[]).filter(Boolean).length || b.stage - a.stage || b.id - a.id);
+      if (!newC.length) sheet.append(h('div',{class:'sub'},'まだ登録がありません。'));
+      newC.forEach(c => {
+        c.checks = c.checks || [false,false,false,false];
+        const fc = h('div',{class:'fitc'});
+        FITS.forEach((f,i) => { const b = h('button',{class:c.checks[i]?'on':''}, f); b.onclick = () => { c.checks[i] = !c.checks[i]; saveMeta(); buildReach(); }; fc.append(b); });
+        const ladder = h('div',{class:'ladder'});
+        STAGES.forEach((label,i) => {
+          const b = h('button',{class:i<=c.stage?'on':''}, label);
+          b.onclick = () => {
+            c.stage = (c.stage === i) ? Math.max(0, i-1) : i;
+            if (c.stage >= 3 && !c.replied){ c.replied = true; meta.rlog.push({d:keyOf(new Date()), type:'reply', co:c.id}); }
+            saveMeta(); buildReach(); checkAch();
+          };
+          ladder.append(b);
+        });
+        const touch = h('button',{class:'on'}, `接点＋1（${c.touches||0}回）`);
+        touch.onclick = () => { touchCompany(c); buildReach(); checkAch(); };
+        sheet.append(h('div',{class:'card rc2'},
+          h('div',{class:'hd'}, h('b',{},c.name), h('span',{class:'tag',style:'margin:0'}, `合う度 ${c.checks.filter(Boolean).length}/4`)),
+          c.info ? h('div',{class:'sub',style:'margin:6px 0 0'}, c.info) : null,
+          siteLink(c), fc, ladder, h('div',{class:'acts'}, touch, delBtn(c)), karteBtn(c), memoIn(c)));
+      });
+    }
+
+    sheet.append(h('h2',{},'登録'));
+    const f = h('div',{class:'card'});
+    const nm = h('input',{type:'text',placeholder:'会社名',maxlength:'40'});
+    nm.value = rform.name; nm.addEventListener('input', e => rform.name = e.target.value);
+    f.append(nm);
+    const seg = h('div',{class:'seg',style:'margin-top:10px'});
+    [['exist','既存'],['fit','新規の建築会社'],['shop','SHOP']].forEach(([k,l]) => {
+      const b = h('button',{class:rform.kind===k?'on':''}, l); b.onclick = () => { rform.kind = k; buildReach(); }; seg.append(b);
+    });
+    f.append(seg); sheet.append(f);
+    const add = h('button',{class:'add on'},'追加');
+    add.onclick = () => {
+      const n = rform.name.trim();
+      if (!n){ add.textContent = '会社名を入力してください'; return; }
+      const c = {id:Date.now(), name:n, kind:rform.kind, stage:0, touches:0, orders:0, replied:false, memo:'', created:keyOf(new Date())};
+      if (c.kind==='exist') c.tier = 4; else if (c.kind==='shop') c.sst = 0; else c.checks = [false,false,false,false];
+      meta.reach.push(c); meta.rlog.push({d:keyOf(new Date()), type:'list', co:c.id});
+      meta.rtab = c.kind==='exist' ? 'exist' : c.kind==='shop' ? 'shop' : 'new';
+      rform.name = ''; saveMeta(); buildReach();
+    };
+    sheet.append(add);
+  }
+  $('openReach').onclick = openReach;
+
+  /* ---------- 商談カルテ ---------- */
+  const PREP = [['rinen','相手の理念','ホームページ・代表メッセージから'],['kodo','行動指針','大事にしている価値観・やり方'],['career','担当者のキャリア','経歴・関心・SNSでの発信'],
+                ['c_ideal','示唆①　理想','相手が目指す家づくり・会社の姿'],['c_comp','示唆②　競合','競合との違い・差別化の余地'],['c_trend','示唆③　市場トレンド','GX・ウェルネス・インバウンドなど']];
+  const FACTS = ['ビジネスモデル','現状','理想（数値）','ギャップ','原因','示唆','合意した課題'];
+  const PHASES = ['初訪\n30分','本インタビュー','提案'];
+  const DEFAULT_CARDS = ['空間の差別化（畳コーナー・小上がり）','ウェルネス（イ草の香り・調湿）','サステナビリティ・脱炭素（国産イ草・循環）','インバウンド対応（和の体験）','子育て・家族の居場所','文化を次の世代へ'];
+  const cardsList = () => (meta.cards && meta.cards.length) ? meta.cards : DEFAULT_CARDS;
+  const kOf = c => { c.karte = c.karte || {prep:{}, facts:['','','','','','',''], phase:null, cards:[]}; return c.karte; };
+  const factN = c => c.karte ? c.karte.facts.filter(x => (x||'').trim()).length : 0;
+  function karteBtn(c){
+    const n = factN(c), ph = c.karte && c.karte.phase!=null ? PHASES[c.karte.phase].replace('\n','') : null;
+    const b = h('button',{class:'add',style:'height:44px;margin-top:8px;font-size:13px'}, '商談カルテ' + (c.karte ? `（${ph ? ph+'・' : ''}ファクト${n}/7）` : ''));
+    b.onclick = () => openKarte(c); return b;
+  }
+  function touchK(c){ c.kUpd = new Date().toISOString(); saveMeta(); }
+  function openKarte(c){ openSheet('karte'); buildKarte(c); }
+  function buildKarte(c){
+    const k = kOf(c);
+    sheet.textContent = '';
+    sheet.append(head(c.name));
+    const n = factN(c);
+    sheet.append(h('div',{class:'sub'}, `商談カルテ ・ ${k.phase!=null ? PHASES[k.phase].replace('\n','') : 'フェーズ未設定'} ・ ファクト ${n}/7`));
+    const tb = h('div',{class:'ktab'});
+    ['仕込み（3C）','7つのファクト','ステップ・カード'].forEach((l,i) => {
+      const b = h('button',{class:meta.ktab===i?'on':''}, l); b.onclick = () => { meta.ktab = i; saveMeta(); buildKarte(c); }; tb.append(b);
+    });
+    sheet.append(tb);
+    const field = (label, hint, val, onIn, ok) => {
+      const ta = h('textarea',{placeholder:hint,maxlength:'400'}); ta.value = val || '';
+      const wrap = h('div',{class:'kf'+(ok?' ok':'')}, h('div',{class:'kl'}, h('b',{},label), ok ? h('span',{},'✓') : null), h('div',{class:'card'}, ta));
+      ta.addEventListener('input', e => { onIn(e.target.value); wrap.classList.toggle('ok', !!e.target.value.trim()); touchK(c); });
+      return wrap;
+    };
+    if (meta.ktab === 0){
+      sheet.append(h('div',{class:'sub',style:'margin-top:8px'}, '雑談や御用聞きはしない。「よく調べてきてくれた」と思ってもらう準備です。'));
+      if (c.kind!=='exist' && c.checks) sheet.append(h('div',{class:'sub'}, '理念のサイン：' + FITS.map((f,i) => (c.checks[i]?'✓':'・')+f).join('　')));
+      PREP.forEach(([key,label,hint]) => sheet.append(field(label, hint, k.prep[key], v => k.prep[key] = v, (k.prep[key]||'').trim())));
+    } else if (meta.ktab === 1){
+      const empty = FACTS.filter((f,i) => !(k.facts[i]||'').trim());
+      sheet.append(h('div',{class:'sub',style:'margin-top:8px'}, empty.length ? `次の商談で聞くこと：${empty.join('・')}` : '7つ全部そろいました。提案に進めます。'));
+      sheet.append(h('div',{class:'sub'}, '商品の説明は、7つがそろってから。'));
+      FACTS.forEach((f,i) => sheet.append(field(`${i+1}. ${f}`, i===2 ? '数字で（例：坪単価・年間棟数・和室採用率）' : '', k.facts[i], v => k.facts[i] = v, (k.facts[i]||'').trim())));
+    } else {
+      sheet.append(h('h2',{},'商談フェーズ'));
+      const ph = h('div',{class:'phase'});
+      PHASES.forEach((l,i) => { const b = h('button',{class:k.phase!=null && i<=k.phase ? 'on':''}, l);
+        b.onclick = () => { k.phase = (k.phase===i) ? (i ? i-1 : null) : i; touchK(c); buildKarte(c); }; ph.append(b); });
+      sheet.append(ph);
+      sheet.append(h('h2',{},'選択肢カード'));
+      sheet.append(h('div',{class:'sub'}, '商談中に「全画面で見せる」を開いて、相手に選んでもらいます。選ばれたカードは「理想」に書き足されます。'));
+      const show = h('button',{class:'add on'}, '全画面で見せる'); show.onclick = () => openCardsFS(c);
+      sheet.append(show);
+      const cg = h('div',{class:'cgrid'});
+      cardsList().forEach(t => { const b = h('button',{class:k.cards.includes(t)?'on':''}, t); b.onclick = () => { pickCard(c,t); buildKarte(c); }; cg.append(b); });
+      sheet.append(cg);
+      sheet.append(h('h2',{},'カードの文言（全社共通・1行1枚）'));
+      const ed = h('textarea',{style:'min-height:150px'}); ed.value = cardsList().join('\n');
+      ed.addEventListener('change', e => { const v = e.target.value.split('\n').map(x => x.trim()).filter(Boolean); meta.cards = v.length ? v : null; saveMeta(); buildKarte(c); });
+      sheet.append(h('div',{class:'card'}, ed));
+    }
+  }
+  function pickCard(c, t){
+    const k = kOf(c);
+    if (k.cards.includes(t)) k.cards = k.cards.filter(x => x!==t);
+    else {
+      k.cards.push(t);
+      const line = '・' + t;
+      if (!(k.facts[2]||'').includes(line)) k.facts[2] = ((k.facts[2]||'').trim() ? k.facts[2].trim() + '\n' : '') + line;
+    }
+    touchK(c);
+  }
+  function openCardsFS(c){
+    const el = $('cfs'); el.textContent = '';
+    const close = h('button',{class:'x2','aria-label':'閉じる'},'✕');
+    close.onclick = () => { el.classList.remove('open'); buildKarte(c); };
+    const g = h('div',{class:'cg2'});
+    const draw = () => { g.textContent = ''; cardsList().forEach(t => { const b = h('button',{class:kOf(c).cards.includes(t)?'on':''}, t); b.onclick = () => { pickCard(c,t); draw(); }; g.append(b); }); };
+    draw();
+    el.append(close, h('div',{class:'q'}, 'これからの家づくりで、', h('br'), '大切にしたいことは？'), g);
+    el.classList.add('open'); el.scrollTop = 0;
+  }
+  function renderNextDeal(){
+    const el = $('nextDeal'); el.textContent = '';
+    const list = meta.reach.filter(c => c.karte && (c.karte.phase!=null || factN(c) || Object.values(c.karte.prep).some(Boolean)))
+      .sort((a,b) => (b.kUpd||'').localeCompare(a.kUpd||''));
+    if (!list.length) return;
+    const c = list[0], k = c.karte;
+    const b = h('button',{class:'card nd'},
+      h('div',{class:'lb'}, '次の商談'),
+      h('div',{class:'nm'}, c.name),
+      h('div',{class:'sb'}, `${k.phase!=null ? PHASES[k.phase].replace('\n','') : 'フェーズ未設定'} ・ ファクト ${factN(c)}/7` + (factN(c)<7 ? ` ・ 次に聞く：${FACTS.find((f,i) => !(k.facts[i]||'').trim())}` : '')));
+    b.onclick = () => openKarte(c);
+    el.append(b);
+  }
+
+  /* ---------- トースト＆コピー ---------- */
+  let toastT;
+  function toast(msg){
+    const t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1900);
+  }
+  function reportText(){
+    const d = todayDate(), n = diffDays(START, d) + 1, s = dayStat(curKey);
+    const undone = blocksFor(d).filter(b => !rec.b[b.id]).map(b => b.title);
+    return [
+      `【Norigoni Daily OS】${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}（${WD[d.getDay()]}） ${n<1?'開始前':`Day ${n}/${TOTAL}`}`,
+      `ハイライト：${rec.hl || '（未入力）'} ${rec.hlDone ? '✅完了' : '⬜未完了'}`,
+      `スケジュール達成：${s.done}/${s.total}（${Math.round(s.done/s.total*100)}%）`,
+      `最低ライン：${minMet(curKey) && s.done>0 ? '達成' : '未達'}`,
+      undone.length ? `未完了：${undone.join('、')}` : null,
+      (() => { const a = actOf(curKey); return `営業行動：発信${a.post}${(a.plog||[]).length ? '（'+a.plog.map(x=>({Instagram:'IG',YouTube:'YT',TikTok:'TT'})[x]||x).join('・')+'）' : ''}・伸ばす投稿${a.viral}・Thank You Letter${a.review}${(a.tlog||[]).filter(Boolean).length ? '（'+a.tlog.filter(Boolean).join('、')+'）' : ''}・接点${touchesOn(curKey)}`; })(),
+      (() => { const i = latestBrand('ig'), y = latestBrand('yt'); const t = latestBrand('tt'); return `ブランド：Instagram ${i ? i.v : '—'}/10,000 ・ YouTube ${y ? y.v : '—'}/1,000 ・ TikTok ${t ? t.v : '—'}`; })(),
+      (() => { const k = keyOf(new Date()); const ns = meta.rlog.filter(e => e.type==='touch' && e.d===k).map(e => (meta.reach.find(c => c.id===e.co)||{}).name).filter(Boolean); return ns.length ? `接点の相手：${ns.join('、')}` : null; })(),
+      `集中度：${rec.f!=null ? FOCUS[rec.f] : '未選択'}`,
+      todayDos().length ? `今日やると決めたこと：${todayDos().map(g => (g.doTime?g.doTime+' ':'')+g.title).join('、')}` : null,
+      `一言メモ：${rec.memo || '（なし）'}`,
+      relayToday() ? `今朝試したこと（昨夜のメモ）：${relayToday()}` : null,
+      `明朝5時に試すこと：${(rec.try5||'').trim() || '（未入力）'}`
+    ].filter(Boolean).join('\n');
+  }
+  async function copyText(text){
+    try { await navigator.clipboard.writeText(text); return true; } catch(e){}
+    try {
+      const ta = h('textarea',{style:'position:fixed;left:-9999px;top:0'}); ta.value = text;
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      const ok = document.execCommand('copy'); ta.remove(); return ok;
+    } catch(e){ return false; }
+  }
+  $('copy').onclick = async () => { toast((await copyText(reportText())) ? 'コピーしました' : 'コピーに失敗しました'); };
+
+  /* ---------- シート共通 ---------- */
+  const ov = $('ov'), sheet = $('sheet');
+  let sheetKind = null;
+  function openSheet(kind){ sheetKind = kind; ov.classList.add('open'); sheet.parentNode.scrollTop = 0; }
+  function closeSheet(){ ov.classList.remove('open'); sheetKind = null; renderAll(); }
+  ov.addEventListener('click', e => { if (e.target === ov) closeSheet(); });
+  const head = title => h('div',{class:'sh'}, h('b',{},title), h('button',{class:'x',onclick:closeSheet,'aria-label':'閉じる'},'✕'));
+
+  /* ---------- 目標・スケジュール設定 ---------- */
+  const form = {tier:'short', due:'', blocks:[], title:''};
+  function resetForm(){ form.tier='short'; form.due=keyOf(addDays(todayDate(), TIER_DAYS.short)); form.blocks=[]; form.title=''; }
+  resetForm();
+
+  function openGoals(){ openSheet('goals'); buildGoals(); }
+  function buildGoals(){
+    sheet.textContent = '';
+    sheet.append(head('目標・スケジュール設定'));
+
+    sheet.append(h('h2',{},'最低ライン'));
+    sheet.append(h('div',{class:'sub'}, '忙しい日はこれだけやればOK。達成すれば連続記録は途切れません。'));
+    const mc = h('div',{class:'chips'});
+    CHIP_IDS.forEach(id => {
+      const b = h('button',{class:'chip'+(meta.minB.includes(id)?' on':'')}, nameOf(id));
+      b.onclick = () => {
+        meta.minB = meta.minB.includes(id) ? meta.minB.filter(x=>x!==id) : meta.minB.concat(id);
+        saveMeta(); buildGoals();
+      };
+      mc.appendChild(b);
+    });
+    sheet.append(mc);
+
+    sheet.append(h('h2',{},'目標一覧'));
+    const list = sortedGoals();
+    if (!list.length) sheet.append(h('div',{class:'sub'},'まだ目標がありません。下のフォームから追加してください。'));
+    list.forEach(g => {
+      const i = goalInfo(g);
+      const bn = (g.blocks||[]).map(nameOf).join('・');
+      const doneBtn = h('button',{}, g.done ? '戻す' : '達成');
+      doneBtn.onclick = () => { g.done = !g.done; saveMeta(); buildGoals(); };
+      const pinBtn = h('button',{class:g.pin?'on':''}, g.pin ? 'トップ表示中' : 'トップに表示');
+      pinBtn.onclick = () => { g.pin = !g.pin; saveMeta(); buildGoals(); };
+      const delBtn = h('button',{},'削除');
+      delBtn.onclick = () => {
+        if (delBtn.dataset.sure){ meta.goals = meta.goals.filter(x => x.id!==g.id); saveMeta(); buildGoals(); }
+        else { delBtn.dataset.sure = '1'; delBtn.textContent = '本当に？'; }
+      };
+      const lab = h('span',{}, g.manual!=null ? `${g.manual}%` : '未設定');
+      const rng = h('input',{type:'range',min:'0',max:'100',step:'5'});
+      rng.value = g.manual!=null ? g.manual : 0;
+      rng.addEventListener('input', e => { g.manual = +e.target.value; lab.textContent = g.manual+'%'; saveMeta(); });
+      sheet.append(h('div',{class:'card gi'+(g.done?' done':'')},
+        h('div',{style:'flex:1;min-width:0'},
+          h('div',{class:'t'}, h('span',{class:'tag'},TIERS[g.tier]), g.title),
+          h('div',{class:'m'}, `${goalLine(g,i)} ・ 期限${g.due.replace(/-/g,'/')}` + (bn ? ` ・ ${bn}` : '')),
+          (g.metric || g.auto) ? null : h('div',{class:'rg'}, h('span',{},'進行度（手入力）'), rng, lab),
+          doRow(g, buildGoals)),
+        h('div',{class:'b'}, pinBtn, doneBtn, delBtn)));
+    });
+
+    sheet.append(h('h2',{},'目標を追加'));
+    const f = h('div',{class:'card'});
+    const title = h('input',{type:'text',placeholder:'目標（例：大手建築会社に3社アプローチ）',maxlength:'70'});
+    title.value = form.title;
+    title.addEventListener('input', e => form.title = e.target.value);
+    f.append(title);
+    const seg = h('div',{class:'seg',style:'margin-top:10px'});
+    TIER_ORDER.forEach(t => {
+      const b = h('button',{class:form.tier===t?'on':''}, TIERS[t]);
+      b.onclick = () => { form.tier = t; form.due = keyOf(addDays(todayDate(), TIER_DAYS[t])); buildGoals(); };
+      seg.append(b);
+    });
+    f.append(seg);
+    f.append(h('div',{class:'sub',style:'margin-top:12px'},'期限'));
+    const due = h('input',{type:'date'});
+    due.value = form.due;
+    due.addEventListener('input', e => form.due = e.target.value);
+    f.append(due);
+    f.append(h('div',{class:'sub',style:'margin-top:8px'},'関連するスケジュール（実行率が進捗に反映されます）'));
+    const hc = h('div',{class:'chips'});
+    CHIP_IDS.forEach(id => {
+      const b = h('button',{class:'chip'+(form.blocks.includes(id)?' on':'')}, nameOf(id));
+      b.onclick = () => {
+        form.blocks = form.blocks.includes(id) ? form.blocks.filter(x=>x!==id) : form.blocks.concat(id);
+        buildGoals();
+      };
+      hc.append(b);
+    });
+    f.append(hc);
+    sheet.append(f);
+    const add = h('button',{class:'add on'},'追加する');
+    add.onclick = () => {
+      const t = form.title.trim();
+      if (!t || !form.due) { add.textContent = '目標と期限を入力してください'; return; }
+      meta.goals.push({id:Date.now(), tier:form.tier, title:t, due:form.due,
+        created:keyOf(todayDate()), blocks:form.blocks.slice(), done:false, manual:null});
+      saveMeta(); resetForm(); buildGoals();
+    };
+    sheet.append(add);
+
+    sheet.append(h('h2',{},'スケジュールの時間・名前'));
+    sheet.append(h('div',{class:'sub'}, '時間は「05:00-06:00」の形式で入力します。空にするか形式が違うと、初期値に戻ります。'));
+    EDIT_KEYS.forEach(key => {
+      const d = DEF[key], o = meta.ov[key] || {};
+      const ti = h('input',{type:'text',inputmode:'numeric',maxlength:'11',placeholder:d.t});
+      ti.value = o.t || d.t;
+      ti.addEventListener('change', () => {
+        const v = ti.value.trim().replace(/[〜～–−ー]/g,'-');
+        const p = parseT(v);
+        meta.ov[key] = meta.ov[key] || {};
+        if (p && p[0] < p[1]){
+          const fmt = m => pad(Math.floor(m/60))+':'+pad(m%60);
+          meta.ov[key].t = fmt(p[0])+'-'+fmt(p[1]);
+        } else delete meta.ov[key].t;
+        saveMeta(); buildGoals();
+      });
+      const na = h('input',{type:'text',maxlength:'30',placeholder:d.title});
+      na.value = o.title || d.title;
+      na.addEventListener('input', () => {
+        meta.ov[key] = meta.ov[key] || {};
+        const v = na.value.trim();
+        if (v) meta.ov[key].title = v; else delete meta.ov[key].title;
+        saveMeta();
+      });
+      na.addEventListener('change', buildGoals);
+      sheet.append(h('div',{class:'sub',style:'margin:8px 0 2px'}, (EDIT_NOTE[key]||'') ));
+      sheet.append(h('div',{class:'card ed'}, ti, na));
+    });
+
+    sheet.append(h('h2',{},'週の営業行動の目標'));
+    const wtg = h('div',{class:'kv',style:'grid-template-columns:repeat(4,1fr)'});
+    [['post','発信'],['viral','伸ばす投稿'],['review','Thank You Letter'],['touch','接点']].forEach(([k,l]) => {
+      const inp = h('input',{type:'text',inputmode:'numeric',maxlength:'3',style:'text-align:center;font-size:18px'}); inp.value = meta.wt[k];
+      inp.addEventListener('input', e => { const v = parseInt(e.target.value,10); if (v>0){ meta.wt[k] = v; saveMeta(); } });
+      wtg.append(h('div',{class:'card'}, inp, h('span',{}, l)));
+    });
+    sheet.append(wtg);
+
+    sheet.append(h('h2',{},'保存した時点に戻す'));
+    const sn = snapInfo();
+    sheet.append(h('div',{class:'sub'}, sn ? `最後に「現在の数値で保存」を押した時点（${fmtT(sn.t)}）に、全部の記録を戻せます。` : 'まだ「現在の数値で保存」を押していません。'));
+    if (sn){
+      const rb = h('button',{class:'add'}, `${fmtT(sn.t)} の状態に戻す`);
+      rb.onclick = () => {
+        if (!rb.dataset.sure){ rb.dataset.sure = '1'; rb.textContent = 'それ以降の入力は消えます。もう一度タップで実行'; return; }
+        try { localStorage.setItem(KEY, JSON.stringify(sn.store)); localStorage.setItem(MKEY, JSON.stringify(sn.meta)); } catch(e){}
+        location.reload();
+      };
+      sheet.append(rb);
+    }
+
+    sheet.append(h('h2',{},'バックアップ'));
+    sheet.append(h('div',{class:'sub'}, '記録はこの端末のブラウザの中にあります。機種変更や、ファイルの入れ替えの前に、コピーして保管してください（メモアプリなどに貼り付け）。'));
+    const bk = h('button',{class:'add'},'記録をコピー（バックアップ）');
+    bk.onclick = async () => { toast((await copyText(JSON.stringify({v:1, store, meta}))) ? 'コピーしました' : 'コピーに失敗しました'); };
+    sheet.append(bk);
+    const ta = h('textarea',{placeholder:'ここにバックアップを貼り付けて読み込み',style:'margin-top:10px'});
+    sheet.append(h('div',{class:'card',style:'margin-top:10px'}, ta));
+    const ld = h('button',{class:'add'},'貼り付けた内容を読み込む');
+    ld.onclick = () => {
+      let o; try { o = JSON.parse(ta.value); } catch(e){ ld.textContent = '読み込めませんでした（形式が違います）'; return; }
+      if (!o || !o.store || !o.meta){ ld.textContent = '読み込めませんでした（形式が違います）'; return; }
+      if (!ld.dataset.sure){ ld.dataset.sure = '1'; ld.textContent = '今の記録は上書きされます。もう一度タップで実行'; return; }
+      try { localStorage.setItem(KEY, JSON.stringify(o.store)); localStorage.setItem(MKEY, JSON.stringify(o.meta)); } catch(e){}
+      location.reload();
+    };
+    sheet.append(ld);
+  }
+
+  /* ---------- 週次振り返り ---------- */
+  function openReview(){
+    openSheet('review');
+    const t0 = todayDate();
+    const wk = weekKey(t0), mon = parseKey(wk), sun = addDays(mon,6);
+    const days = []; for (let d = mon; d <= sun && d <= t0; d = addDays(d,1)) days.push(keyOf(d));
+    let done = 0, tot = 0;
+    days.forEach(k => { const s = dayStat(k); done += s.done; tot += s.total; });
+    const full = days.filter(k => { const s = dayStat(k); return s.done===s.total; }).length;
+    const mins = days.filter(k => count(k)>0 && minMet(k)).length;
+    const fc = [0,1,2].map(i => days.filter(k => get(k).f===i).length);
+
+    sheet.textContent = '';
+    sheet.append(head('週次振り返り'));
+    sheet.append(h('div',{class:'sub'}, `${mon.getMonth()+1}/${mon.getDate()}（月）〜 ${sun.getMonth()+1}/${sun.getDate()}（日）`));
+    if (meta.why) sheet.append(h('div',{class:'why',style:'padding:12px'}, h('div',{class:'sub',style:'margin:0 0 4px'},'目的'), meta.why));
+
+    const r = meta.reviews[wk] = meta.reviews[wk] || {saved:false};
+    const prevVal = field => {
+      const ks = Object.keys(meta.reviews).filter(k => k < wk && meta.reviews[k][field]).sort();
+      return ks.length ? meta.reviews[ks[ks.length-1]][field] : null;
+    };
+    const mkNum = (field, unit, label) => {
+      const inp = h('input',{type:'text',inputmode:'decimal',placeholder:'—',maxlength:'6'});
+      inp.value = r[field] || '';
+      inp.addEventListener('input', e => { r[field] = e.target.value.trim(); r.saved = true; saveMeta(); });
+      const pv = prevVal(field);
+      return h('div',{},
+        h('div',{class:'sub',style:'margin:0 2px 4px'}, label),
+        h('div',{class:'card row'}, inp, h('span',{class:'sub',style:'margin:0'},unit)),
+        h('div',{class:'sub',style:'margin:4px 4px 0'}, pv ? `前回 ${pv}${unit}` : '前回の記録なし'));
+    };
+
+    sheet.append(h('h2',{},'体の計測（週1）'));
+    sheet.append(h('div',{class:'two'}, mkNum('weight','kg','体重（目標 73未満）'), mkNum('fat','%','体脂肪（目標 11）')));
+
+    sheet.append(h('h2',{},'今週の営業'));
+    const wa = weekAct(), wt = meta.wt;
+    const kv0 = (b,s) => h('div',{class:'card'}, h('b',{},b), h('span',{},s));
+    sheet.append(h('div',{class:'kv',style:'grid-template-columns:repeat(4,1fr)'},
+      kv0(`${wa.post}/${wt.post}`,'発信'), kv0(`${wa.viral}/${wt.viral}`,'伸ばす投稿'), kv0(`${wa.review}/${wt.review}`,'Thank You Letter'), kv0(`${wa.touch}/${wt.touch}`,'接点')));
+    const inqW = meta.inq.filter(x => inWeek(x.d)), ordW = meta.orders.filter(x => inWeek(x.d)).length;
+    const byR = {}; inqW.forEach(x => byR[x.r] = (byR[x.r]||0)+1);
+    sheet.append(h('div',{class:'sub'}, `問い合わせ ${inqW.length}件` + (inqW.length ? `（${Object.entries(byR).map(([r,n]) => r+n).join('・')}）` : '') + ` ／ 既存からの発注 ${ordW}件`));
+    const igW = meta.brand.filter(x => x.d < wk && x.ig!=null).pop(), igN = latestBrand('ig');
+    if (igN) sheet.append(h('div',{class:'sub'}, `Instagram ${igN.v.toLocaleString()}人` + (igW ? `（先週から +${igN.v - igW.ig}）` : '')));
+    sheet.append(h('div',{class:'sub',style:'margin-top:12px'},'来週の新しい挑戦（延長線にない一手を1つ）'));
+    const ch = h('textarea',{maxlength:'200',placeholder:'例：施工動画を建築会社3社に送る／リールの新しい型を試す'});
+    ch.value = r.challenge || '';
+    ch.addEventListener('input', e => { r.challenge = e.target.value; r.saved = true; saveMeta(); });
+    sheet.append(h('div',{class:'card'}, ch));
+
+    sheet.append(h('h2',{},'今週の数字'));
+    const kv = (b,s) => h('div',{class:'card'}, h('b',{},b), h('span',{},s));
+    sheet.append(h('div',{class:'kv'}, kv(`${done}/${tot}`,'スケジュール達成'), kv(String(full),'全達成の日'), kv(String(mins),'最低ライン以上の日')));
+    sheet.append(h('div',{class:'kv'}, kv(String(fc[0]),'集中 ◎'), kv(String(fc[1]),'集中 ○'), kv(String(fc[2]),'集中 △')));
+
+    sheet.append(h('h2',{},'目標を見直す'));
+    const act = sortedGoals().filter(g => !g.done);
+    if (!act.length) sheet.append(h('div',{class:'sub'},'設定中の目標はありません。'));
+    act.forEach(g => {
+      const i = goalInfo(g);
+      const fill = h('i'); fill.style.width = Math.round(i.p*100)+'%';
+      sheet.append(h('div',{class:'g'+(i.left<0?' late':''),style:'margin-bottom:8px'},
+        h('div',{class:'l1'}, h('div',{class:'t'}, h('span',{class:'tag'},TIERS[g.tier]), g.title)),
+        h('div',{class:'m',style:'margin-top:4px;white-space:normal'}, goalLine(g,i)),
+        h('div',{class:'bar'}, fill)));
+    });
+
+    sheet.append(h('h2',{},'ふりかえり'));
+    [['good','うまくいったこと'],['hard','つまずいたこと・理由'],['next','来週、変えること1つ']].forEach(([key,label]) => {
+      sheet.append(h('div',{class:'sub'},label));
+      const ta = h('textarea',{maxlength:'200'}); ta.value = r[key] || '';
+      ta.addEventListener('input', e => { r[key] = e.target.value; r.saved = true; saveMeta(); });
+      sheet.append(h('div',{class:'card'}, ta));
+    });
+  }
+
+  const SKEY = 'oni100_snap_v1';
+  const fmtT = iso => { const d = new Date(iso); return `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+  function snapInfo(){ try { const o = JSON.parse(localStorage.getItem(SKEY)); return o && o.t ? o : null; } catch(e){ return null; } }
+  function showSaved(){ const o = snapInfo(); $('saveNote').textContent = o ? `最終保存：${fmtT(o.t)}（入力は自動保存もされています）` : '入力はその場で自動保存されます。保存ボタンは「この時点」を控えとして残します'; }
+  $('saveNow').onclick = () => {
+    store[curKey] = rec;
+    let ok = true;
+    try {
+      localStorage.setItem(KEY, JSON.stringify(store));
+      localStorage.setItem(MKEY, JSON.stringify(meta));
+      localStorage.setItem(SKEY, JSON.stringify({t:new Date().toISOString(), store, meta}));
+    } catch(e){ ok = false; }
+    toast(ok ? `保存しました（${fmtT(new Date().toISOString())}）` : '保存できませんでした');
+    showSaved();
+  };
+  showSaved();
+  $('openGoals').onclick = openGoals;
+  $('openReview').onclick = openReview;
+
+  /* ---------- 日付切替・現在時刻の更新 ---------- */
+  function tick(){
+    const k = keyOf(new Date());
+    if (k !== curKey){ curKey = k; rec = get(curKey); }
+    if (!sheetKind && doEditing === null) renderAll();
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+  window.addEventListener('focus', tick);
+  setInterval(tick, 30000);
+
+  checkAch(true);
+  $('schedBox').addEventListener('toggle', () => renderSchedule());
+  renderAll();
+  fitWhy();
+})();
+</script>
+</body>
+</html>
