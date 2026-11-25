@@ -1737,17 +1737,22 @@
     sheet.append(wtg);
 
     sheet.append(h('h2',{},'保存した時点に戻す'));
-    const sn = snapInfo();
-    sheet.append(h('div',{class:'sub'}, sn ? `最後に「現在の数値で保存」を押した時点（${fmtT(sn.t)}）に、全部の記録を戻せます。` : 'まだ「現在の数値で保存」を押していません。'));
-    if (sn){
-      const rb = h('button',{class:'add'}, `${fmtT(sn.t)} の状態に戻す`);
+    const snaps = snapList().slice().reverse();
+    sheet.append(h('div',{class:'sub'}, snaps.length
+      ? `「現在の数値で保存」を押した時点が、最新${SNAP_MAX}回分まで残ります（今 ${snaps.length}回分）。戻す前の状態も自動で1回分残すので、戻しすぎてもやり直せます。`
+      : 'まだ「現在の数値で保存」を押していません。'));
+    const sl = h('div',{class:'olist'});
+    snaps.forEach((sn,i) => {
+      const rb = h('button',{}, h('span',{}, fmtT(sn.t) + (sn.auto ? '（戻す直前）' : '')), h('small',{}, i===0 ? '最新' : 'この時点に戻す'));
       rb.onclick = () => {
-        if (!rb.dataset.sure){ rb.dataset.sure = '1'; rb.textContent = 'それ以降の入力は消えます。もう一度タップで実行'; return; }
+        if (!rb.dataset.sure){ rb.dataset.sure = '1'; rb.firstChild.textContent = `${fmtT(sn.t)} に戻す？ もう一度タップで実行`; return; }
+        pushSnap(true);
         try { localStorage.setItem(KEY, JSON.stringify(sn.store)); localStorage.setItem(MKEY, JSON.stringify(sn.meta)); } catch(e){}
         location.reload();
       };
-      sheet.append(rb);
-    }
+      sl.append(rb);
+    });
+    sheet.append(sl);
 
     sheet.append(h('h2',{},'バックアップ'));
     sheet.append(h('div',{class:'sub'}, '記録はこの端末のブラウザの中にあります。機種変更や、ファイルの入れ替えの前に、コピーして保管してください（メモアプリなどに貼り付け）。'));
@@ -1845,18 +1850,36 @@
     });
   }
 
-  const SKEY = 'oni100_snap_v1';
+  const SKEY = 'oni100_snap_v1', SNAP_MAX = 30;
   const fmtT = iso => { const d = new Date(iso); return `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
-  function snapInfo(){ try { const o = JSON.parse(localStorage.getItem(SKEY)); return o && o.t ? o : null; } catch(e){ return null; } }
-  function showSaved(){ const o = snapInfo(); $('saveNote').textContent = o ? `最終保存：${fmtT(o.t)}（入力は自動保存もされています）` : '入力はその場で自動保存されます。保存ボタンは「この時点」を控えとして残します'; }
+  function snapList(){
+    try {
+      const o = JSON.parse(localStorage.getItem(SKEY));
+      if (Array.isArray(o)) return o;
+      if (o && o.t) return [o];          // 旧形式（1回分）を引き継ぐ
+    } catch(e){}
+    return [];
+  }
+  function pushSnap(auto){
+    const list = snapList();
+    list.push({t:new Date().toISOString(), store, meta, auto: !!auto});
+    while (list.length > SNAP_MAX) list.shift();
+    while (list.length){
+      try { localStorage.setItem(SKEY, JSON.stringify(list)); return true; }
+      catch(e){ list.shift(); }           // 容量がいっぱいなら古いものから消す
+    }
+    return false;
+  }
+  function snapInfo(){ const l = snapList().filter(x => !x.auto); return l.length ? l[l.length-1] : null; }
+  function showSaved(){ const o = snapInfo(); $('saveNote').textContent = o ? `最終保存：${fmtT(o.t)} ・ 履歴 ${snapList().length}/${SNAP_MAX}回分（入力は自動保存もされています）` : '入力はその場で自動保存されます。保存ボタンは「この時点」を控えとして残します'; }
   $('saveNow').onclick = () => {
     store[curKey] = rec;
     let ok = true;
     try {
       localStorage.setItem(KEY, JSON.stringify(store));
       localStorage.setItem(MKEY, JSON.stringify(meta));
-      localStorage.setItem(SKEY, JSON.stringify({t:new Date().toISOString(), store, meta}));
     } catch(e){ ok = false; }
+    if (ok) ok = pushSnap(false);
     toast(ok ? `保存しました（${fmtT(new Date().toISOString())}）` : '保存できませんでした');
     showSaved();
   };
