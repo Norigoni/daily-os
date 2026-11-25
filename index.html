@@ -50,8 +50,11 @@
   .link{background:none;border:0;color:var(--igusa-lt);font-size:12px;padding:4px 0;letter-spacing:.04em}
 
   /* 北極星 */
-  .why{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--igusa);border-radius:12px;padding:6px 10px}
-  .why textarea{font-size:min(15px,3.1vw);line-height:1.6;min-height:0;padding:8px 4px;overflow:hidden}
+  .why{background:radial-gradient(120% 140% at 50% 0%,rgba(74,124,89,.28),rgba(23,26,24,.9) 70%);border:1px solid rgba(74,124,89,.5);border-radius:16px;padding:18px 8px 14px;margin-top:4px;box-shadow:0 0 28px rgba(74,124,89,.18)}
+  .why .wl{font-size:10px;letter-spacing:.3em;color:var(--igusa-lt);text-align:center}
+  .why textarea{font-size:clamp(17px,5vw,30px);font-weight:700;line-height:1.55;letter-spacing:0;text-align:center;min-height:0;padding:8px 2px 2px;overflow:hidden;color:#f2f5f3}
+  .g.tap{cursor:pointer}
+  .g.tap .upd{font-size:11px;color:var(--igusa-lt);margin-top:6px}
   details.ms{margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:0 12px}
   details.ms summary{list-style:none;cursor:pointer;padding:12px 0;font-size:12px;color:var(--sub);letter-spacing:.1em;
     display:flex;justify-content:space-between}
@@ -332,7 +335,7 @@
       <div class="day" id="day"></div>
     </header>
     <div class="bar"><i id="prog"></i></div>
-    <div class="why"><textarea id="why" rows="1" placeholder="なぜやる？ 目的を書く" maxlength="120"></textarea></div>
+    <div class="why"><div class="wl">理念</div><textarea id="why" rows="1" placeholder="なぜやる？ 目的を書く" maxlength="120"></textarea></div>
     <details class="ms" id="ms">
       <summary><span>北極星 ・ 逆算マイルストーン</span></summary>
       <ul id="msList"></ul>
@@ -703,10 +706,10 @@
   $('memo').addEventListener('input', e => { rec.memo = e.target.value; store[curKey] = rec; saveStore(); });
   $('try5').addEventListener('input', e => { rec.try5 = e.target.value; store[curKey] = rec; saveStore(); });
   const relayToday = () => (get(keyOf(addDays(parseKey(curKey), -1))).try5 || '').trim();
-  const DEFAULT_WHY = '自然から始まり、愛に満たされていく世界をつくる。';
+  const DEFAULT_WHY = '自然から始まり、\n愛に満たされていく世界をつくる。';
   const OLD_WHY = '地球を株主とし、世界平和と人間性の回復を目的と定め、感謝と感動が渦巻く世界を創る';
   const fitWhy = () => { const w = $('why'); w.style.height = 'auto'; w.style.height = w.scrollHeight + 'px'; };
-  if (!meta.why || meta.why === OLD_WHY || !meta.whyV3){ meta.why = DEFAULT_WHY; meta.whyV3 = true; saveMeta(); }
+  if (!meta.why || meta.why === OLD_WHY || !meta.whyV3 || meta.why === '自然から始まり、愛に満たされていく世界をつくる。'){ meta.why = DEFAULT_WHY; meta.whyV3 = true; saveMeta(); }
   $('why').addEventListener('input', e => { meta.why = e.target.value; saveMeta(); fitWhy(); });
   $('why').value = meta.why;
   fitWhy();
@@ -899,13 +902,35 @@
     shown.forEach(g => {
       const i = goalInfo(g);
       const fill = h('i'); fill.style.width = Math.round(i.p*100)+'%';
-      el.appendChild(h('div',{class:'g'+(i.left<0?' late':'')},
+      const card = h('div',{class:'g'+(i.left<0?' late':'')+(g.metric?' tap':'')},
         h('div',{class:'l1'},
           h('div',{class:'t'}, h('span',{class:'tag'},TIERS[g.tier]), g.title),
           h('div',{class:'m'}, (g.metric ? `${i.cur!=null ? i.cur+g.unit : '—'} → ${g.targetLabel || g.target+g.unit} ・` : '') + (i.left<0 ? `期限${-i.left}日超過` : i.left===0 ? '今日' : `あと${i.left}日`))),
         h('div',{class:'bar'}, fill),
-        doRow(g, renderGoalStrip)));
+        g.metric ? h('div',{class:'upd'}, 'タップして今の数値を入れる') : null,
+        doRow(g, renderGoalStrip));
+      if (g.metric) card.onclick = openBody;
+      el.appendChild(card);
     });
+  }
+  function openBody(){
+    openSheet('body'); sheet.textContent = ''; sheet.append(head('体重・体脂肪を更新'));
+    const wk = weekKey(todayDate());
+    const r = meta.reviews[wk] = meta.reviews[wk] || {saved:false};
+    sheet.append(h('div',{class:'sub'}, '今の数値を入れると、トップの目標カードにすぐ反映されます（今週の記録として残ります）。'));
+    const ins = {};
+    [['weight','kg','体重（目標 73kg未満）'],['fat','%','体脂肪（目標 11〜12%）']].forEach(([f,unit,label]) => {
+      const inp = h('input',{type:'text',inputmode:'decimal',maxlength:'6',placeholder: latestBody(f)!=null ? String(latestBody(f)) : ''});
+      inp.value = r[f] || ''; ins[f] = inp;
+      sheet.append(h('div',{class:'sub',style:'margin:12px 2px 4px'}, label),
+        h('div',{class:'card row'}, inp, h('span',{class:'sub',style:'margin:0'}, unit)));
+    });
+    const sv = h('button',{class:'add on'}, '保存');
+    sv.onclick = () => {
+      ['weight','fat'].forEach(f => { const v = ins[f].value.trim(); if (v) r[f] = v; });
+      r.saved = true; saveMeta(); toast('更新しました'); closeSheet();
+    };
+    sheet.append(sv);
   }
 
   /* ---------- 100日マップ ---------- */
