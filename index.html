@@ -651,6 +651,18 @@
     meta.seeded19 = true; saveMeta();
   }
 
+  // 2026/11/28 海外アカウントの出発点（Instagram海外 70人・YouTube海外 11人）
+  if (!meta.seeded20){
+    const hasX = meta.brand.some(x => x.igx!=null || x.ytx!=null);
+    if (!hasX){
+      let e = meta.brand.find(x => x.d === '2026-11-28');
+      if (!e){ e = {d:'2026-11-28'}; meta.brand.push(e); }
+      e.igx = 70; e.ytx = 11;
+      meta.brand.sort((a,b) => a.d.localeCompare(b.d));
+    }
+    meta.seeded20 = true; saveMeta();
+  }
+
   /* ---------- スケジュール ---------- */
   function mk(id, key){
     const d = DEF[key], o = (meta.ov||{})[key] || {};
@@ -1928,7 +1940,7 @@
   setInterval(tick, 30000);
 
   // 新しい版の自動確認（ホーム画面のアプリが古い版を覚えたままになるのを防ぐ）
-  const APP_VER = '2026-11-28b';
+  const APP_VER = '2026-11-28c';
   let verChecking = false;
   async function checkUpdate(){
     if (verChecking || location.protocol === 'file:') return;
