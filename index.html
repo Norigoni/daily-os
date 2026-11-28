@@ -403,6 +403,7 @@
     <button id="openReview">週次振り返り<span class="dot" id="rdot" style="display:none"></span></button>
   </div>
   <button class="savebtn" id="saveNow">現在の数値で保存</button>
+  <div class="note" id="verNote" style="margin-top:6px"></div>
   <div class="note" id="saveNote">入力はその場で自動保存されます。保存ボタンは「この時点」を控えとして残します</div>
 </div>
 
@@ -1210,6 +1211,8 @@
         h('div',{class:'st'+(diff>0?' ahead':'')}, L ? (diff!=null ? `前回から ${diff>=0?'+':''}${diff}` : '次の更新から増え方が出ます') : empty));
     };
     el.append(growCard('TikTok', 'tt', '人', 'フォロワー数を入れると、増え方が出ます'));
+    el.append(growCard('Instagram（海外）', 'igx', '人', '海外アカウントのフォロワー数を入れると、増え方が出ます'));
+    el.append(growCard('YouTube（海外）', 'ytx', '人', '海外チャンネルの登録者数を入れると、増え方が出ます'));
     meta.blogs = meta.blogs || [];
     const mk3 = [2,1,0].map(i => { const d = new Date(todayDate().getFullYear(), todayDate().getMonth()-i, 1); return ym(d); });
     const wrote = m => meta.blogs.filter(d => d.slice(0,7)===m).length;
@@ -1243,7 +1246,7 @@
     sheet.append(h('div',{class:'sub'}, '毎週月曜の朝7時に、この画面で数字を入れます。決まった時間にやると、続けやすくなります。'));
     const k = keyOf(todayDate());
     let e = meta.brand.find(x => x.d===k);
-    const F = [['ig','Instagram フォロワー'],['yt','YouTube 登録者'],['tt','TikTok フォロワー'],['gr','Google 口コミ件数'],['gs','Google 星の平均（例：4.9）']];
+    const F = [['ig','Instagram フォロワー'],['yt','YouTube 登録者'],['tt','TikTok フォロワー'],['igx','Instagram（海外） フォロワー'],['ytx','YouTube（海外） 登録者'],['gr','Google 口コミ件数'],['gs','Google 星の平均（例：4.9）']];
     const vals = {}; F.forEach(([f]) => vals[f] = (latestBrand(f)||{}).v ?? '');
     const ins = {};
     F.forEach(([f,label]) => {
@@ -1607,7 +1610,7 @@
       `最低ライン：${minMet(curKey) && s.done>0 ? '達成' : '未達'}`,
       undone.length ? `未完了：${undone.join('、')}` : null,
       (() => { const a = actOf(curKey); return `営業行動：発信${a.post}${(a.plog||[]).length ? '（'+a.plog.map(x=>PL_AB[x]||x).join('・')+'）' : ''}・伸ばす投稿${a.viral}・Thank You Letter${a.review}${(a.tlog||[]).filter(Boolean).length ? '（'+a.tlog.filter(Boolean).join('、')+'）' : ''}・接点${touchesOn(curKey)}`; })(),
-      (() => { const i = latestBrand('ig'), y = latestBrand('yt'); const t = latestBrand('tt'); return `ブランド：Instagram ${i ? i.v : '—'}/10,000 ・ YouTube ${y ? y.v : '—'}/1,000 ・ TikTok ${t ? t.v : '—'}`; })(),
+      (() => { const i = latestBrand('ig'), y = latestBrand('yt'); const t = latestBrand('tt'); const ix = latestBrand('igx'), yx = latestBrand('ytx'); return `ブランド：Instagram ${i ? i.v : '—'}/10,000 ・ YouTube ${y ? y.v : '—'}/1,000 ・ TikTok ${t ? t.v : '—'}` + (ix||yx ? ` ・ 海外 IG ${ix ? ix.v : '—'}・YT ${yx ? yx.v : '—'}` : ''); })(),
       (() => { const k = keyOf(new Date()); const ns = meta.rlog.filter(e => e.type==='touch' && e.d===k).map(e => (meta.reach.find(c => c.id===e.co)||{}).name).filter(Boolean); return ns.length ? `接点の相手：${ns.join('、')}` : null; })(),
       `集中度：${rec.f!=null ? FOCUS[rec.f] : '未選択'}`,
       todayDos().length ? `今日やると決めたこと：${todayDos().map(g => (g.doTime?g.doTime+' ':'')+g.title).join('、')}` : null,
@@ -1923,6 +1926,27 @@
   document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
   window.addEventListener('focus', tick);
   setInterval(tick, 30000);
+
+  // 新しい版の自動確認（ホーム画面のアプリが古い版を覚えたままになるのを防ぐ）
+  const APP_VER = '2026-11-28b';
+  let verChecking = false;
+  async function checkUpdate(){
+    if (verChecking || location.protocol === 'file:') return;
+    verChecking = true;
+    try {
+      const r = await fetch(location.pathname + '?v=' + Date.now(), {cache:'no-store'});
+      const t = await r.text();
+      const m = t.match(/const APP_VER = '([^']+)'/);
+      if (m && m[1] !== APP_VER){
+        let n = 0; try { n = +sessionStorage.getItem('oni_up') || 0; } catch(e){}
+        if (n < 2){ try { sessionStorage.setItem('oni_up', n+1); } catch(e){} toast('新しい版に更新します'); setTimeout(() => location.replace(location.pathname + '?v=' + m[1]), 800); }
+      }
+    } catch(e){}
+    verChecking = false;
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkUpdate(); });
+  setTimeout(checkUpdate, 1500);
+  $('verNote').textContent = '版 ' + APP_VER;
 
   checkAch(true);
   $('schedBox').addEventListener('toggle', () => renderSchedule());
