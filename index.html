@@ -1054,7 +1054,8 @@
   $('sales').onclick = openSales;
 
   /* ---------- 今日の営業アクション ---------- */
-  const PLATS = ['Instagram','YouTube','TikTok'];
+  const PLATS = ['Instagram','YouTube','TikTok','Instagram（海外）','YouTube（海外）'];
+  const PL_AB = {'Instagram':'IG','YouTube':'YT','TikTok':'TT','Instagram（海外）':'IG海外','YouTube（海外）':'YT海外'};
   function setAct(field, d, plat){
     const a = Object.assign({post:0, viral:0, review:0, plog:[]}, rec.act || {});
     a.plog = a.plog || [];
@@ -1134,7 +1135,8 @@
     const el = $('acts'); el.textContent = '';
     const a = actOf(curKey), w = weekAct(), wt = meta.wt, td = touchesOn(curKey);
     const pc = platCount();
-    const plSub = (pc.Instagram||pc.YouTube||pc.TikTok) ? `今週 IG${pc.Instagram||0}・YT${pc.YouTube||0}・TT${pc.TikTok||0}` : 'Instagram・YouTube・TikTok';
+    const plUsed = PLATS.filter(x => pc[x]);
+    const plSub = plUsed.length ? '今週 ' + plUsed.map(x => PL_AB[x] + pc[x]).join('・') : 'Instagram・YouTube・TikTok（国内・海外）';
     const defs = [
       ['post','発信', plSub, a.post, w.post, wt.post],
       ['viral','伸ばす投稿','新しい型・コラボ・話題', a.viral, w.viral, wt.viral],
@@ -1604,7 +1606,7 @@
       `スケジュール達成：${s.done}/${s.total}（${Math.round(s.done/s.total*100)}%）`,
       `最低ライン：${minMet(curKey) && s.done>0 ? '達成' : '未達'}`,
       undone.length ? `未完了：${undone.join('、')}` : null,
-      (() => { const a = actOf(curKey); return `営業行動：発信${a.post}${(a.plog||[]).length ? '（'+a.plog.map(x=>({Instagram:'IG',YouTube:'YT',TikTok:'TT'})[x]||x).join('・')+'）' : ''}・伸ばす投稿${a.viral}・Thank You Letter${a.review}${(a.tlog||[]).filter(Boolean).length ? '（'+a.tlog.filter(Boolean).join('、')+'）' : ''}・接点${touchesOn(curKey)}`; })(),
+      (() => { const a = actOf(curKey); return `営業行動：発信${a.post}${(a.plog||[]).length ? '（'+a.plog.map(x=>PL_AB[x]||x).join('・')+'）' : ''}・伸ばす投稿${a.viral}・Thank You Letter${a.review}${(a.tlog||[]).filter(Boolean).length ? '（'+a.tlog.filter(Boolean).join('、')+'）' : ''}・接点${touchesOn(curKey)}`; })(),
       (() => { const i = latestBrand('ig'), y = latestBrand('yt'); const t = latestBrand('tt'); return `ブランド：Instagram ${i ? i.v : '—'}/10,000 ・ YouTube ${y ? y.v : '—'}/1,000 ・ TikTok ${t ? t.v : '—'}`; })(),
       (() => { const k = keyOf(new Date()); const ns = meta.rlog.filter(e => e.type==='touch' && e.d===k).map(e => (meta.reach.find(c => c.id===e.co)||{}).name).filter(Boolean); return ns.length ? `接点の相手：${ns.join('、')}` : null; })(),
       `集中度：${rec.f!=null ? FOCUS[rec.f] : '未選択'}`,
